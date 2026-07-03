@@ -1,0 +1,93 @@
+GAMÓN & ASOCIADOS — AGENDA
+Cómo publicarla e instalarla — TODO desde el celular Android
+================================================================
+
+Vas a usar GitHub Pages, un servicio gratuito para publicar sitios
+web. Todo se hace tocando la pantalla, sin computadora.
+
+PASO 1 — Descomprimir el zip
+-------------------------------
+1. Descargá el archivo gamon-agenda.zip que te compartí.
+2. Abrí la app "Archivos" (o "Mis archivos") de tu Android.
+3. Buscá el zip descargado, tocalo y elegí "Extraer" o "Descomprimir".
+4. Te va a quedar una carpeta "gamon-agenda" con 10 archivos adentro.
+
+PASO 2 — Crear tu cuenta de GitHub
+--------------------------------------
+1. Abrí Chrome y entrá a: https://github.com/signup
+2. Completá con tu email, una contraseña y un nombre de usuario
+   (por ejemplo: gamonasociados). Es gratis.
+3. Confirmá tu email si te lo pide.
+
+PASO 3 — Crear el repositorio (la "carpeta" del proyecto)
+---------------------------------------------------------------
+1. Ya logueado, tocá el botón "+" arriba a la derecha → "New repository".
+2. En "Repository name" escribí: gamon-agenda
+3. Marcá que sea "Public".
+4. NO marques "Add a README file".
+5. Tocá "Create repository".
+
+PASO 4 — Subir los archivos
+-------------------------------
+1. En la página del repositorio recién creado, buscá el link
+   "uploading an existing file" (o el botón "Add file" →
+   "Upload files").
+2. Tocá "choose your files".
+3. Se abre el selector de archivos de tu Android: andá a la carpeta
+   "gamon-agenda" que descomprimiste en el Paso 1.
+4. Seleccioná TODOS los archivos de adentro a la vez (mantené el dedo
+   apretado sobre el primero para activar la selección múltiple, y
+   después tocá el resto uno por uno hasta marcar los 10).
+   Importante: entrá DENTRO de la carpeta y seleccioná los archivos
+   sueltos, no la carpeta en sí.
+5. Confirmá para subirlos.
+6. Abajo de todo tocá el botón verde "Commit changes" (o "Commit
+   directly to the main branch" y después "Commit changes").
+
+PASO 5 — Activar GitHub Pages
+---------------------------------
+1. Dentro del repositorio, tocá "Settings" (puede estar escondido en
+   un menú de tres rayas si la pantalla es chica).
+2. En el menú de la izquierda (o el menú desplegable en mobile),
+   buscá "Pages".
+3. En "Build and deployment" → "Source", elegí "Deploy from a branch".
+4. En "Branch" elegí "main" y la carpeta "/ (root)". Tocá "Save".
+5. Esperá 1 o 2 minutos. Refrescá la página: arriba te va a aparecer
+   un mensaje verde con el link de tu sitio, algo como:
+   https://tu-usuario.github.io/gamon-agenda/
+
+   Tip: si en el celular la página de GitHub se ve muy amontonada,
+   tocá los tres puntos de Chrome (⋮) → "Sitio de escritorio", así
+   ves los botones más claros.
+
+PASO 6 — Instalarla en tu Android
+-------------------------------------
+1. Abrí ese link (https://tu-usuario.github.io/gamon-agenda/) en
+   Chrome.
+2. Va a aparecer un cartel abajo "Agregar Gamón Agenda a la pantalla
+   de inicio" o un ícono de instalar en la barra de direcciones.
+   Tocalo y confirmá "Instalar".
+3. Listo: te queda un ícono con el logo del estudio, como cualquier
+   otra app.
+
+¿Y si no hay internet?
+------------------------
+Una vez que la abriste instalada al menos una vez con internet, sigue
+funcionando sin conexión (agenda, clientes, vencimientos, notas),
+porque los datos se guardan dentro del propio celular.
+
+¿Cómo la actualizo si le pido a Claude un cambio más adelante?
+--------------------------------------------------------------------
+Te voy a pasar los archivos nuevos. En GitHub, entrá al repositorio
+"gamon-agenda", tocá el archivo que cambió, tocá el ícono de lápiz
+(editar) o subilo de nuevo desde "Add file → Upload files" (GitHub te
+va a preguntar si querés reemplazar el que ya existe). El sitio se
+actualiza solo un minuto después.
+
+Importante sobre los datos
+------------------------------
+Los datos se guardan dentro de cada celular donde se instale la app,
+no en un servidor común. Si en el futuro el estudio necesita que
+varias personas compartan la misma información en tiempo real, eso
+requiere un paso más (una base de datos en la nube) que se puede
+sumar después.
