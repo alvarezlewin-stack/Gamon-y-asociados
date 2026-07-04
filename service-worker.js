@@ -1,4 +1,4 @@
-const CACHE_NAME = "gamon-agenda-cache-v6";
+const CACHE_NAME = "gamon-agenda-cache-v7";
 
 const APP_SHELL = [
   "./",
@@ -16,7 +16,20 @@ const APP_SHELL = [
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
+    caches.open(CACHE_NAME).then((cache) => {
+      // En vez de "todo o nada" (cache.addAll), probamos archivo por archivo.
+      // Así, si uno falla por una conexión inestable (ej. 3G débil), no tira
+      // abajo la instalación completa del Service Worker.
+      return Promise.all(
+        APP_SHELL.map((url) =>
+          cache.add(url).catch((err) => {
+            console.error("[SW] No se pudo precachear:", url, err);
+            // Seguimos igual: ese archivo se cacheará más adelante,
+            // la primera vez que se pida con éxito (estrategia "red primero").
+          })
+        )
+      );
+    })
   );
   self.skipWaiting();
 });
