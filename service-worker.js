@@ -1,6 +1,5 @@
-const CACHE_NAME = "gamon-agenda-cache-v1";
+const CACHE_NAME = "gamon-agenda-cache-v2";
 
-// Archivos propios de la app, se guardan apenas se instala
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -28,29 +27,20 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// Estrategia: cache primero, y si no está, va a la red y lo guarda para la próxima
-// (así las fuentes y librerías externas también quedan disponibles offline después de la primera visita)
+// Estrategia: RED PRIMERO. Si hay internet, siempre trae la version mas nueva
+// y la guarda. Si no hay internet, recien ahi usa lo que tenga guardado.
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-
-      return fetch(event.request)
-        .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, copy).catch(() => {});
-          });
-          return response;
-        })
-        .catch(() => {
-          // Sin red y sin cache para este recurso: si era la página principal, mostramos el shell
-          if (event.request.mode === "navigate") {
-            return caches.match("./index.html");
-          }
+    fetch(event.request)
+      .then((response) => {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, copy).catch(() => {});
         });
-    })
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
