@@ -7,19 +7,22 @@
   <meta name="description" content="Agenda jurídica, clientes, expedientes y vencimientos para Gamón & Asociados." />
 
   <script>
-    // Diagnóstico temporal: si algo falla, lo mostramos en pantalla en vez de dejarla negra
+    // Manejo de errores: registra en consola para diagnóstico técnico,
+    // y solo si la app no llega a cargar, muestra un aviso amigable (sin detalles técnicos).
     window.addEventListener("error", function (e) {
-      var msg = (e && e.message) ? e.message : "Error desconocido";
-      var src = (e && e.filename) ? e.filename.split("/").pop() : "";
-      var line = (e && e.lineno) ? e.lineno : "";
-      var box = document.createElement("pre");
-      box.style.cssText = "color:#fff;background:#7A2E2E;padding:16px;white-space:pre-wrap;font-size:13px;font-family:monospace;margin:0;position:fixed;top:0;left:0;right:0;z-index:99999;max-height:100vh;overflow:auto;";
-      box.textContent = "ERROR DETECTADO:\n" + msg + (src ? "\nArchivo: " + src + " (línea " + line + ")" : "");
-      function attach() {
-        (document.body || document.documentElement).appendChild(box);
-      }
-      if (document.body) attach();
-      else document.addEventListener("DOMContentLoaded", attach);
+      console.error("[Gamón Agenda] Error:", e && e.message, e);
+    });
+    window.addEventListener("load", function () {
+      setTimeout(function () {
+        var root = document.getElementById("root");
+        if (root && root.children.length === 0) {
+          root.innerHTML =
+            '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;font-family:sans-serif;color:#F3EDD9;background:#0B0B0A;">' +
+            '<p style="font-size:16px;margin-bottom:8px;">No se pudo cargar la aplicación.</p>' +
+            '<p style="font-size:13px;color:#F3EDD9AA;">Revisá tu conexión a internet y volvé a intentar. Si el problema sigue, avisá al soporte técnico.</p>' +
+            "</div>";
+        }
+      }, 4000);
     });
   </script>
 

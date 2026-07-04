@@ -1,8 +1,10 @@
 {
+  "id": "./",
+  "lang": "es",
   "name": "Gamón & Asociados — Agenda",
   "short_name": "Gamón Agenda",
   "description": "Agenda jurídica, clientes, expedientes y vencimientos para Gamón & Asociados.",
-  "start_url": "./index.html",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
