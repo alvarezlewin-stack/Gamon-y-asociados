@@ -168,10 +168,22 @@ StorageService.remove(storeName, id)     // elimina un registro
 
 **Regla para módulos nuevos (Procesos, Actuaciones, Documentos, etc.):** cada entidad nueva debe sumarse a la lista `STORES` dentro de `storage-service.js`, y usar siempre `StorageService.getAll/put/remove` — nunca acceder a `indexedDB` directamente desde otro archivo.
 
-## 8. Checklist rápido antes de cada despliegue
+## 8. Checklist técnico rápido (al agregar/modificar archivos)
 
 - [ ] ¿Agregué algún archivo nuevo? → Sumarlo a `APP_SHELL` en `service-worker.js`.
 - [ ] ¿El archivo nuevo tiene JSX? → Compilarlo a `React.createElement` antes de subir.
 - [ ] ¿Cambié algo que requiere invalidar la caché vieja de todos los usuarios? → Subir el número de `CACHE_NAME`.
 - [ ] ¿Subí todos los archivos relacionados en el mismo commit? → Evita estados intermedios rotos.
 - [ ] ¿Probé el link público después de esperar 1-2 minutos? → GitHub Pages tarda en propagar.
+
+## 9. Checklist de liberación (obligatorio antes de publicar cualquier versión nueva)
+
+- [ ] La aplicación instala correctamente.
+- [ ] Se abre sin la barra del navegador (modo standalone confirmado).
+- [ ] Funciona completamente offline (probado en modo avión, no solo "sin tocar wifi").
+- [ ] No pierde información existente (probado con datos reales cargados antes de actualizar).
+- [ ] El Service Worker actualiza correctamente (versión de `CACHE_NAME` subida si correspondía).
+- [ ] La caché se actualiza correctamente (se ve la versión nueva, no una vieja atrapada).
+- [ ] Los íconos se muestran correctamente (incluyendo forma maskable, sin cortes).
+- [ ] No existen errores nuevos en consola.
+- [ ] La documentación (`ARQUITECTURA-PWA.md` y/o `VERIFICACION-PWA.md`) está actualizada si el cambio lo amerita.
