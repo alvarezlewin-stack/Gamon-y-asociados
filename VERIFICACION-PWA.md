@@ -72,6 +72,16 @@ Con la app ya instalada y abierta al menos una vez con internet: activar modo av
 - 🟩 Si en el futuro se agrega una función que dependa de ventanas (ej. atajos de escritorio en una versión de PC), evaluar `display_override`.
 - 🟩 Generar un ícono `apple-touch-icon` de 180x180 exacto para un resultado pixel-perfect en iOS (hoy funciona con escalado automático, sin problema visible).
 
+## 12. Verificación de comportamiento IndexedDB (v1.8)
+
+| Acción del usuario/navegador | Efecto sobre `IndexedDB` |
+|---|---|
+| Borrar caché ("imágenes y archivos") | 🟢 Sin efecto — es una categoría distinta (Cache Storage / HTTP cache) |
+| Borrar "Cookies y datos de sitios" | 🔴 Borra todo (localStorage + IndexedDB + Service Worker) — son inseparables desde esa opción |
+| Desinstalar la app | 🟢 Sin efecto — solo quita el acceso directo |
+
+**Hallazgo (corregido en esta versión):** la copia de respaldo en `localStorage` que se guardaba tras la migración nunca se actualizaba, lo que podía revivir datos ya borrados/editados en un escenario borde (pérdida de la marca de migración sin pérdida de esa copia). **Corrección aplicada:** la copia vieja se borra apenas la migración termina con éxito (`storage-service.js`, `CACHE_NAME` subido a `v6`).
+
 ---
 
 **Conclusión formal: 🟢 PWA CERTIFICADA A NIVEL DE CÓDIGO**, con dos puntos 🟡 pendientes de verificación empírica en dispositivos que el usuario no tiene disponibles para probar en este momento (Edge/Samsung Internet Android, y confirmación explícita del modo avión). Ninguno de los dos representa un riesgo conocido — son huecos de evidencia, no defectos detectados. Queda base sólida para iniciar el desarrollo de LexFlow.

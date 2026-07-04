@@ -109,8 +109,13 @@ var StorageService = (function () {
     if (Array.isArray(legacy.notes) && legacy.notes.length) jobs.push(putAll("notes", legacy.notes));
 
     return Promise.all(jobs).then(function () {
-      try { localStorage.setItem(MIGRATION_FLAG_KEY, "true"); } catch (e) {}
-      // No borramos el localStorage viejo: queda como respaldo silencioso.
+      try {
+        localStorage.setItem(MIGRATION_FLAG_KEY, "true");
+        // Borramos la copia vieja: dejarla "dando vueltas" sin actualizar
+        // es un riesgo (podría resucitar datos ya borrados/editados si la
+        // marca de migración se pierde alguna vez sin borrar esta copia).
+        localStorage.removeItem(LEGACY_LOCALSTORAGE_KEY);
+      } catch (e) {}
       return true;
     });
   }
