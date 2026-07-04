@@ -22,28 +22,9 @@ function Icon({ name, size = 18, color = "currentColor", strokeWidth = 1.8 }) {
     return (React.createElement("svg", { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: color, strokeWidth: strokeWidth, strokeLinecap: "round", strokeLinejoin: "round" },
         React.createElement("path", { d: ICON_PATHS[name] || "" })));
 }
-// ---------- Almacenamiento local (funciona 100% offline) ----------
-const STORAGE_KEY = "gamon-agenda-data-v1";
-function loadData() {
-    try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw)
-            return { clients: [], events: [], notes: [] };
-        return JSON.parse(raw);
-    }
-    catch (e) {
-        return { clients: [], events: [], notes: [] };
-    }
-}
-function saveData(data) {
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        return true;
-    }
-    catch (e) {
-        return false;
-    }
-}
+// El almacenamiento de datos ahora vive en storage-service.js (StorageService).
+// App.js ya no lee ni escribe localStorage/IndexedDB directamente.
+
 // ---------- Utilidades ----------
 const TIPOS_EVENTO = [
     { id: "audiencia", label: "Audiencia", icon: "gavel" },
@@ -135,7 +116,10 @@ const inputStyle = {
 };
 // ---------- App principal ----------
 function App() {
-    const [data, setData] = useState(() => loadData());
+    const [clients, setClients] = useState([]);
+    const [events, setEvents] = useState([]);
+    const [notes, setNotes] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [tab, setTab] = useState("agenda");
     const [showAddEvent, setShowAddEvent] = useState(false);
     const [showAddClient, setShowAddClient] = useState(false);
@@ -143,20 +127,68 @@ function App() {
     const [selectedClient, setSelectedClient] = useState(null);
     const [search, setSearch] = useState("");
     const [saveError, setSaveError] = useState(false);
-    const { clients, events, notes } = data;
-    function persist(next) {
-        const merged = Object.assign(Object.assign({}, data), next);
-        setData(merged);
-        const ok = saveData(merged);
-        setSaveError(!ok);
+
+    useEffect(() => {
+        let cancelled = false;
+        StorageService.init()
+            .then(() => Promise.all([
+                StorageService.getAll("clients"),
+                StorageService.getAll("events"),
+                StorageService.getAll("notes"),
+            ]))
+            .then(([loadedClients, loadedEvents, loadedNotes]) => {
+                if (cancelled) return;
+                setClients(loadedClients);
+                setEvents(loadedEvents);
+                setNotes(loadedNotes);
+            })
+            .catch(() => { if (!cancelled) setSaveError(true); })
+            .finally(() => { if (!cancelled) setLoading(false); });
+        return () => { cancelled = true; };
+    }, []);
+
+    function addClient(client) {
+        const record = Object.assign(Object.assign({}, client), { id: uid(), createdAt: todayISO() });
+        StorageService.put("clients", record)
+            .then(() => setClients((prev) => [...prev, record]))
+            .catch(() => setSaveError(true));
     }
-    function addClient(client) { persist({ clients: [...clients, Object.assign(Object.assign({}, client), { id: uid(), createdAt: todayISO() })] }); }
-    function deleteClient(id) { persist({ clients: clients.filter((c) => c.id !== id) }); setSelectedClient(null); }
-    function addEvent(ev) { persist({ events: [...events, Object.assign(Object.assign({}, ev), { id: uid(), done: false })] }); }
-    function toggleEventDone(id) { persist({ events: events.map((e) => (e.id === id ? Object.assign(Object.assign({}, e), { done: !e.done }) : e)) }); }
-    function deleteEvent(id) { persist({ events: events.filter((e) => e.id !== id) }); }
-    function addNote(note) { persist({ notes: [...notes, Object.assign(Object.assign({}, note), { id: uid(), createdAt: todayISO() })] }); }
-    function deleteNote(id) { persist({ notes: notes.filter((n) => n.id !== id) }); }
+    function deleteClient(id) {
+        StorageService.remove("clients", id)
+            .then(() => setClients((prev) => prev.filter((c) => c.id !== id)))
+            .catch(() => setSaveError(true));
+        setSelectedClient(null);
+    }
+    function addEvent(ev) {
+        const record = Object.assign(Object.assign({}, ev), { id: uid(), done: false });
+        StorageService.put("events", record)
+            .then(() => setEvents((prev) => [...prev, record]))
+            .catch(() => setSaveError(true));
+    }
+    function toggleEventDone(id) {
+        const target = events.find((e) => e.id === id);
+        if (!target) return;
+        const updated = Object.assign(Object.assign({}, target), { done: !target.done });
+        StorageService.put("events", updated)
+            .then(() => setEvents((prev) => prev.map((e) => (e.id === id ? updated : e))))
+            .catch(() => setSaveError(true));
+    }
+    function deleteEvent(id) {
+        StorageService.remove("events", id)
+            .then(() => setEvents((prev) => prev.filter((e) => e.id !== id)))
+            .catch(() => setSaveError(true));
+    }
+    function addNote(note) {
+        const record = Object.assign(Object.assign({}, note), { id: uid(), createdAt: todayISO() });
+        StorageService.put("notes", record)
+            .then(() => setNotes((prev) => [...prev, record]))
+            .catch(() => setSaveError(true));
+    }
+    function deleteNote(id) {
+        StorageService.remove("notes", id)
+            .then(() => setNotes((prev) => prev.filter((n) => n.id !== id)))
+            .catch(() => setSaveError(true));
+    }
     const clientById = (id) => clients.find((c) => c.id === id);
     const upcomingEvents = useMemo(() => [...events].filter((e) => !e.done).sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || ""))), [events]);
     const vencimientos = useMemo(() => upcomingEvents.filter((e) => e.tipo === "vencimiento"), [upcomingEvents]);
@@ -171,6 +203,10 @@ function App() {
         upcomingEvents.forEach((e) => { (groups[e.date] = groups[e.date] || []).push(e); });
         return groups;
     }, [upcomingEvents]);
+    if (loading) {
+        return (React.createElement("div", { className: "min-h-screen flex items-center justify-center", style: { background: "#0B0B0A" } },
+            React.createElement("img", { src: "logo.jpg", alt: "Gam\u00F3n & Asociados", className: "h-14 object-contain" })));
+    }
     return (React.createElement("div", { className: "min-h-screen flex flex-col", style: { background: "#0B0B0A", fontFamily: "'Public Sans', sans-serif" } },
         React.createElement("header", { className: "px-5 pt-5 pb-4 sticky top-0 z-30 flex flex-col items-center", style: { background: "#000000", borderBottom: "1px solid #E3B23C22" } },
             React.createElement("img", { src: "logo.jpg", alt: "Gam\u00F3n & Asociados", className: "h-16 object-contain rounded-md" }),

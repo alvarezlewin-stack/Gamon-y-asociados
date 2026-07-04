@@ -149,7 +149,26 @@ Esto borra cualquier caché con un nombre distinto al actual — por eso cambiar
 
 ---
 
-## 7. Checklist rápido antes de cada despliegue
+## 7. Capa de datos: StorageService + IndexedDB
+
+Desde la Iteración 1, ningún módulo lee ni escribe `localStorage` o `IndexedDB` directamente para datos de negocio (clientes, eventos, notas). Todo pasa por `storage-service.js`, que expone:
+
+```js
+StorageService.init()                    // abre la base y migra datos viejos (una sola vez)
+StorageService.getAll(storeName)         // devuelve todos los registros de una colección
+StorageService.put(storeName, record)    // crea o actualiza un registro (por su "id")
+StorageService.remove(storeName, id)     // elimina un registro
+```
+
+**Colecciones actuales (`storeName`):** `"clients"`, `"events"`, `"notes"`.
+
+**Migración automática:** la primera vez que un usuario abre esta versión, `StorageService.init()` detecta si hay datos viejos en `localStorage` (clave `gamon-agenda-data-v1`) y los copia a `IndexedDB` sin intervención del usuario. El `localStorage` viejo no se borra — queda como respaldo silencioso. La migración no se repite (se marca con la clave `gamon-agenda-migrated-v1`).
+
+**Por qué esta capa importa para el futuro:** el día que se migre a un servidor propio (Supabase u otro), solo hay que reescribir el contenido de `storage-service.js` para que hable con una API en vez de con `IndexedDB`. Las pantallas (`app.js`) no deberían necesitar ningún cambio, porque solo conocen `StorageService.getAll/put/remove`, no cómo están implementados por dentro.
+
+**Regla para módulos nuevos (Procesos, Actuaciones, Documentos, etc.):** cada entidad nueva debe sumarse a la lista `STORES` dentro de `storage-service.js`, y usar siempre `StorageService.getAll/put/remove` — nunca acceder a `indexedDB` directamente desde otro archivo.
+
+## 8. Checklist rápido antes de cada despliegue
 
 - [ ] ¿Agregué algún archivo nuevo? → Sumarlo a `APP_SHELL` en `service-worker.js`.
 - [ ] ¿El archivo nuevo tiene JSX? → Compilarlo a `React.createElement` antes de subir.
