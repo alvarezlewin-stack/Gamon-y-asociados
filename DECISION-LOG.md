@@ -25,3 +25,25 @@ Para verificar que ambos servicios funcionan de punta a punta sin construir UI (
 
 ## Pendiente para el Decision Log de la próxima iteración
 Diseño de `ReferentialIntegrityService` (mencionado en la Decisión 2) cuando se aborde integridad referencial completa.
+
+---
+
+## Arquitectura 0.9 — ProcesoService, ProcesoParteService, atomicidad real
+
+**Decisión 6 — `StorageService.putMultiple()`: transacción atómica multi-store.**
+`createProcesoCompleto()` necesitaba una garantía real de "todo o nada" a nivel de motor de base de datos, no solo "llamar a dos funciones seguidas". Se agregó `putMultiple(operaciones)` a `StorageService`, que abre **una sola transacción de IndexedDB** abarcando todos los stores involucrados. Si cualquier escritura falla, IndexedDB revierte la transacción completa de forma nativa — no hace falta (ni sería confiable) programar un rollback manual. Sigue siendo un método técnico de `StorageService`; ningún servicio de dominio toca `indexedDB` directamente.
+
+**Decisión 7 — Validaciones asíncronas a partir de Proceso/ProcesoParte.**
+`validarInstitucion` y `validarPersona` son síncronas (solo miran campos propios). `validarProceso` y `validarProcesoParte` son **asíncronas** (devuelven `Promise<{valido, errores}>`) porque necesitan confirmar, contra `StorageService`, que las referencias externas (materia, estado, institución, cliente, persona, proceso) existen de verdad. No es una inconsistencia: cada validador es síncrono o asíncrono según si necesita o no verificar integridad referencial real.
+
+**Decisión 8 — Problema de diseño detectado y resuelto: validar partes de un Proceso que todavía no existe.**
+Durante la implementación se detectó que `validarProcesoParte()` no podía, tal como estaba pensada, validar las partes iniciales de `createProcesoCompleto()` — exigiría que el Proceso ya existiera, pero se crea en la misma operación atómica. Solución: `validarProcesoParte(data, { omitirChequeoDeProcesoExistente: true })`. El flujo normal (`ProcesoParteService.create()`, agregar una parte a un proceso ya existente) siempre valida con el comportamiento por defecto (`false`) — la flexibilización es exclusiva del flujo de creación atómica.
+
+**Decisión 9 — Regla de negocio: ningún Proceso puede crearse sin al menos una parte que sea Cliente del estudio.**
+Implementada en `createProcesoCompleto()`, antes de cualquier escritura: si `partesIniciales` no tiene ninguna entrada con `clienteId`, la operación se rechaza sin tocar la base. Evita procesos "huérfanos" de sentido de negocio (¿para quién trabajamos en ese expediente?).
+
+**Decisión 10 — Ningún índice nuevo fue necesario en esta iteración.**
+Todas las consultas de `ProcesoParteService` (`listByProceso`, `listByCliente`, `listByPersona`) usan los índices ya creados en la Arquitectura 0.7. `ValidationService` usa `StorageService.exists()`, que consulta por clave primaria y no requiere índice adicional. No se tocó `MIGRACIONES.md` porque no hubo cambio de esquema.
+
+**Pendiente conocido (no oculto):** la integridad referencial sigue sin ser general — hoy solo se garantiza en el momento de *crear* (no se puede crear un Proceso apuntando a una institución/materia/estado inexistente, ni una parte apuntando a un cliente/persona/proceso inexistente). Todavía no existe una verificación que impida, por ejemplo, dejar un Proceso sin ninguna parte principal *después* de haberlo creado (si alguien borra lógicamente todas sus partes una por una). Se documenta para abordar junto con `ReferentialIntegrityService` en una iteración futura.
+

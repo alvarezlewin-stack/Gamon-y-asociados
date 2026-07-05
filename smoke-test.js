@@ -38,13 +38,50 @@ var LexFlowSmokeTest = (function () {
       .then(function (r) {
         return InstitutionService.softDelete(r.institucion.id).then(function () {
           return InstitutionService.getById(r.institucion.id);
-        });
+        }).then(function (institucionBorrada) { return Object.assign({}, r, { institucionBorrada: institucionBorrada }); });
       })
-      .then(function (institucionBorrada) {
-        console.log("[SmokeTest] Institución tras softDelete (debe seguir existiendo, marcada):", institucionBorrada);
-        if (!institucionBorrada || institucionBorrada.eliminadoLogico !== true) {
+      .then(function (r) {
+        console.log("[SmokeTest] Institución tras softDelete (debe seguir existiendo, marcada):", r.institucionBorrada);
+        if (!r.institucionBorrada || r.institucionBorrada.eliminadoLogico !== true) {
           throw new Error("La eliminación lógica no funcionó como se esperaba");
         }
+        return r;
+      })
+      .then(function (r) {
+        // --- Arquitectura 0.9: Proceso + ProcesoParte, creación atómica ---
+        return StorageService.getAll("materias").then(function (materias) {
+          return StorageService.getAll("estados_procesales").then(function (estados) {
+            return StorageService.getAll("clients").then(function (clientes) {
+              if (!materias.length || !estados.length) {
+                throw new Error("Faltan catálogos mínimos (materias/estados) para probar Proceso.");
+              }
+              if (!clientes.length) {
+                throw new Error("No hay ningún Cliente cargado — creá al menos uno desde la Agenda antes de correr esta parte del smoke test.");
+              }
+              var procesoDatos = {
+                materiaId: materias[0].id,
+                estadoProcesalId: estados[0].id,
+                institucionId: r.institucion.id,
+                fechaInicio: new Date().toISOString().slice(0, 10),
+              };
+              var partesIniciales = [
+                { clienteId: clientes[0].id, rolProcesal: "Demandante" },
+                { personaId: r.persona.id, rolProcesal: "Contraparte" },
+              ];
+              return ProcesoService.createProcesoCompleto(procesoDatos, partesIniciales);
+            });
+          });
+        });
+      })
+      .then(function (resultado) {
+        console.log("[SmokeTest] Proceso creado atómicamente:", resultado.proceso);
+        console.log("[SmokeTest] Partes creadas junto con el proceso:", resultado.partes);
+        if (resultado.partes.length !== 2) throw new Error("Se esperaban 2 partes creadas junto al proceso, hubo " + resultado.partes.length);
+        return ProcesoParteService.listByProceso(resultado.proceso.id);
+      })
+      .then(function (partesDelProceso) {
+        console.log("[SmokeTest] Partes recuperadas por procesoId:", partesDelProceso);
+        if (partesDelProceso.length !== 2) throw new Error("listByProceso debería devolver 2 partes, devolvió " + partesDelProceso.length);
         console.log("%c[SmokeTest] TODO OK ✅", "color: green; font-weight: bold;");
         return true;
       })

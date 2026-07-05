@@ -161,6 +161,79 @@ var StorageService = (function () {
     });
   }
 
+  // Transacción genérica multi-store. Necesaria para operaciones atómicas
+  // reales (todo-o-nada) que abarcan más de un store a la vez — por ejemplo,
+  // crear un Proceso y sus ProcesoParte juntos. El "executor" recibe los
+  // object stores ya abiertos y debe hacer únicamente llamadas síncronas
+  // (put/delete/etc.) sobre ellos, sin await en el medio: así IndexedDB
+  // garantiza que la transacción completa se confirma o se revierte entera.
+  function runTransaction(storeNames, mode, executor) {
+    return openDB().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var tx;
+        try {
+          tx = db.transaction(storeNames, mode);
+        } catch (e) {
+          reject(e);
+          return;
+        }
+        var stores = {};
+        storeNames.forEach(function (name) { stores[name] = tx.objectStore(name); });
+
+        var result;
+        try {
+          result = executor(stores, tx);
+        } catch (e) {
+          try { tx.abort(); } catch (e2) {}
+          reject(e);
+          return;
+        }
+
+        tx.oncomplete = function () { resolve(result); };
+        tx.onerror = function () { reject(tx.error); };
+        tx.onabort = function () { reject(tx.error || new Error("Transacción abortada")); };
+      });
+    });
+  }
+
+  // Ejecuta varias escrituras en UNA SOLA transacción de IndexedDB, abarcando
+  // uno o más stores. O se guardan TODAS, o no se guarda NINGUNA (si algo
+  // falla, la transacción entera se revierte sola — comportamiento nativo
+  // de IndexedDB, no hay que implementar el rollback a mano).
+  // operations: [{ store: "procesos", record: {...} }, { store: "proceso_partes", record: {...} }, ...]
+  function putMultiple(operations) {
+    var storeNames = operations
+      .map(function (op) { return op.store; })
+      .filter(function (name, i, arr) { return arr.indexOf(name) === i; });
+
+    return openDB().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var tx = db.transaction(storeNames, "readwrite");
+        var settled = false;
+
+        tx.oncomplete = function () {
+          if (!settled) { settled = true; resolve(operations.map(function (op) { return op.record; })); }
+        };
+        tx.onerror = function () {
+          if (!settled) { settled = true; reject(tx.error); }
+        };
+        tx.onabort = function () {
+          if (!settled) { settled = true; reject(tx.error || new Error("La transacción se revirtió por completo (putMultiple).")); }
+        };
+
+        try {
+          operations.forEach(function (op) {
+            tx.objectStore(op.store).put(op.record);
+          });
+        } catch (err) {
+          settled = true;
+          reject(err);
+          try { tx.abort(); } catch (e) {}
+        }
+      });
+    });
+  }
+
   function put(storeName, record) {
     return getStore(storeName, "readwrite").then(function (store) {
       return new Promise(function (resolve, reject) {
@@ -281,7 +354,9 @@ var StorageService = (function () {
     exists: exists,
     count: count,
     put: put,
+    putMultiple: putMultiple,
     remove: remove,
     generateId: generateId,
+    runTransaction: runTransaction,
   };
 })();
