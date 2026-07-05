@@ -33,7 +33,10 @@ const TIPOS_EVENTO = [
     { id: "otro", label: "Otro", icon: "stickyNote" },
 ];
 function uid() {
-    return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+    // A partir de la Arquitectura 0.7, todos los IDs nuevos son UUID v4 reales
+    // (StorageService.generateId), necesario para sincronización futura entre
+    // dispositivos/servidor sin choques de ID. Los registros viejos no se tocan.
+    return StorageService.generateId();
 }
 function todayISO() {
     const d = new Date();
