@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LexFlow — Centro de Agenda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Public+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0C0F; --card:#14171D;
+    --hairline:#262B33; --hairline-soft:#1D2127;
+    --text:#ECEDEF; --text-dim:#8B929E; --text-faint:#5B616B;
+    --gold:#C9A24B; --gold-bright:#E4C878; --gold-dim:rgba(201,162,75,0.12);
+    --danger:#C9564B; --danger-dim:rgba(201,86,75,0.12);
+    --success:#4C9A6A; --success-dim:rgba(76,154,106,0.12);
+    --info:#4C7FC9; --info-dim:rgba(76,127,201,0.12);
+    --purple:#9B7FC9;
+    --radius:10px; --radius-lg:16px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{ background:var(--bg); color:var(--text); font-family:'Public Sans',sans-serif; line-height:1.5; -webkit-font-smoothing:antialiased; }
+  .serif{ font-family:'Fraunces',serif; }
+  .mono{ font-family:'IBM Plex Mono',monospace; }
+  .eyebrow{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--text-faint); }
+
+  .app{ display:grid; grid-template-columns:220px 1fr; min-height:100vh; }
+  @media (max-width:900px){ .app{ grid-template-columns:1fr; } .sidebar{ display:none; } }
+  .sidebar{ border-right:1px solid var(--hairline-soft); padding:26px 16px; }
+  .brandmark .lf{ font-family:'IBM Plex Mono',monospace; font-size:13px; letter-spacing:.22em; color:var(--gold-bright); }
+  .brandmark .firm{ margin-top:6px; font-size:11px; color:var(--text-dim); border-top:1px solid var(--hairline-soft); padding-top:6px; }
+
+  main{ padding:26px 32px 90px; max-width:1240px; }
+  @media (max-width:900px){ main{ padding:18px 16px 70px; } }
+
+  .top{ display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:14px; margin-bottom:20px; }
+  .top h1{ font-size:24px; font-weight:500; }
+  .view-toggle{ display:flex; gap:2px; background:var(--card); border:1px solid var(--hairline-soft); border-radius:8px; padding:3px; }
+  .view-toggle button{ font-size:12px; font-weight:600; padding:6px 14px; border-radius:6px; border:none; background:transparent; color:var(--text-dim); cursor:pointer; }
+  .view-toggle button.active{ background:var(--gold-dim); color:var(--gold-bright); }
+
+  .stats{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
+  @media (max-width:700px){ .stats{ grid-template-columns:repeat(2,1fr); } }
+  .stat-card{ border:1px solid var(--hairline-soft); background:var(--card); border-radius:var(--radius); padding:16px; }
+  .stat-card .num{ font-family:'Fraunces',serif; font-size:26px; font-weight:500; }
+  .stat-card.alert .num{ color:var(--danger); }
+
+  .grid-3{ display:grid; grid-template-columns:1.4fr 1fr 1fr; gap:16px; align-items:start; }
+  @media (max-width:1080px){ .grid-3{ grid-template-columns:1fr; } }
+
+  .panel{ border:1px solid var(--hairline-soft); background:var(--card); border-radius:var(--radius-lg); padding:20px; margin-bottom:16px; }
+  .panel-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+  .panel-head h3{ font-size:14px; font-weight:600; }
+  .panel-head .count{ font-size:11px; color:var(--text-faint); }
+
+  /* jornada — docket rail cruzando casos */
+  .docket{ position:relative; padding-left:30px; }
+  .docket::before{ content:''; position:absolute; left:9px; top:6px; bottom:6px; width:1px; background:var(--hairline); }
+  .docket-item{ position:relative; padding-bottom:20px; }
+  .docket-item:last-child{ padding-bottom:0; }
+  .tl-icon{ position:absolute; left:-30px; top:-2px; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--bg); border:1.5px solid var(--hairline); }
+  .tl-icon svg{ width:11px; height:11px; }
+  .docket-item.now .tl-icon{ border-color:var(--gold); color:var(--gold-bright); box-shadow:0 0 0 3px var(--gold-dim); }
+  .docket-item.audiencia .tl-icon{ border-color:var(--gold); color:var(--gold-bright); }
+  .docket-item.vencimiento .tl-icon{ border-color:var(--danger); color:var(--danger); }
+  .docket-item.tarea .tl-icon{ border-color:var(--info); color:var(--info); }
+  .docket-time{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text-dim); }
+  .docket-title{ font-size:13.5px; font-weight:600; margin:3px 0 2px; }
+  .docket-case{ font-size:11.5px; color:var(--text-dim); }
+  .docket-case .mono{ color:var(--text-faint); }
+
+  .tag{ font-size:10px; font-weight:700; padding:2px 7px; border-radius:20px; border:1px solid currentColor; }
+  .tag.civil{ color:#7FA8D9; } .tag.laboral{ color:#7FBF8F; } .tag.comercial{ color:var(--gold); } .tag.familia{ color:#C98CC9; }
+
+  /* vencimientos */
+  .venc-row{ display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--hairline-soft); gap:10px; }
+  .venc-row:last-child{ border-bottom:none; }
+  .venc-title{ font-size:13px; font-weight:600; }
+  .venc-case{ font-size:11px; color:var(--text-faint); }
+  .venc-days{ font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px; white-space:nowrap; }
+  .venc-days.urgent{ background:var(--danger-dim); color:var(--danger); }
+  .venc-days.soon{ background:var(--gold-dim); color:var(--gold-bright); }
+  .venc-days.ok{ background:var(--success-dim); color:var(--success); }
+
+  /* bitácora */
+  .bit-row{ padding:9px 0; border-bottom:1px solid var(--hairline-soft); }
+  .bit-row:last-child{ border-bottom:none; }
+  .bit-time{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--text-faint); }
+  .bit-text{ font-size:12.5px; margin-top:2px; }
+  .bit-text b{ font-weight:600; }
+
+  .quick-add{ display:flex; gap:8px; margin-top:4px; }
+  .quick-add input{ flex:1; background:var(--bg); border:1px solid var(--hairline-soft); border-radius:8px; padding:9px 12px; color:var(--text); font-size:12.5px; }
+  .quick-add input::placeholder{ color:var(--text-faint); }
+  .quick-add button{ background:var(--gold); color:#14171D; border:none; border-radius:8px; padding:9px 14px; font-weight:700; font-size:12.5px; cursor:pointer; }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brandmark"><div class="lf">LEXFLOW™</div><div class="firm">GAMÓN &amp; ASOCIADOS</div></div>
+  </aside>
+
+  <main>
+    <div class="top">
+      <div>
+        <div class="eyebrow">Domingo · 5 de julio, 2026</div>
+        <h1 class="serif">Buenos días, Cristian</h1>
+      </div>
+      <div class="view-toggle">
+        <button class="active">Día</button>
+        <button>Semana</button>
+        <button>Mes</button>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card"><div class="eyebrow">Audiencias hoy</div><div class="num">5</div></div>
+      <div class="stat-card alert"><div class="eyebrow">Vencimientos · 7 días</div><div class="num">12</div></div>
+      <div class="stat-card"><div class="eyebrow">Tareas pendientes</div><div class="num">7</div></div>
+      <div class="stat-card"><div class="eyebrow">Sin actividad +15 días</div><div class="num">3</div></div>
+    </div>
+
+    <div class="grid-3">
+      <!-- JORNADA -->
+      <div>
+        <div class="panel">
+          <div class="panel-head"><h3>Jornada de hoy</h3><span class="count">5 eventos</span></div>
+          <div class="docket">
+            <div class="docket-item now">
+              <div class="tl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></div>
+              <div class="docket-time">09:30</div>
+              <div class="docket-title">Audiencia inicial</div>
+              <div class="docket-case"><span class="tag civil">Civil</span> <span class="mono">2023-0456</span> · Cristian Alvarado</div>
+            </div>
+            <div class="docket-item audiencia">
+              <div class="tl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></div>
+              <div class="docket-time">11:00</div>
+              <div class="docket-title">Audiencia de pruebas</div>
+              <div class="docket-case"><span class="tag laboral">Laboral</span> <span class="mono">2023-0789</span> · María Fernández</div>
+            </div>
+            <div class="docket-item tarea">
+              <div class="tl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3 8-8M20 12v6a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg></div>
+              <div class="docket-time">13:00</div>
+              <div class="docket-title">Revisar escrito de apelación</div>
+              <div class="docket-case"><span class="tag comercial">Comercial</span> <span class="mono">2023-0123</span> · Empresa XYZ S.A.</div>
+            </div>
+            <div class="docket-item audiencia">
+              <div class="tl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></div>
+              <div class="docket-time">15:00</div>
+              <div class="docket-title">Audiencia de conciliación</div>
+              <div class="docket-case"><span class="tag comercial">Comercial</span> <span class="mono">2023-0123</span> · Empresa XYZ S.A.</div>
+            </div>
+            <div class="docket-item vencimiento">
+              <div class="tl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+              <div class="docket-time">Hoy 23:59</div>
+              <div class="docket-title">Vence plazo de contestación</div>
+              <div class="docket-case"><span class="tag familia">Familia</span> <span class="mono">2023-0998</span> · Pedro Gómez</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VENCIMIENTOS -->
+      <div>
+        <div class="panel">
+          <div class="panel-head"><h3>Vencimientos próximos</h3><span class="count">Ver todos →</span></div>
+          <div class="venc-row"><div><div class="venc-title">Contestación de demanda</div><div class="venc-case mono">2023-0998</div></div><div class="venc-days urgent">Hoy</div></div>
+          <div class="venc-row"><div><div class="venc-title">Recurso de apelación</div><div class="venc-case mono">2023-0456</div></div><div class="venc-days urgent">2 días</div></div>
+          <div class="venc-row"><div><div class="venc-title">Ofrecimiento de prueba</div><div class="venc-case mono">2023-0456</div></div><div class="venc-days soon">6 días</div></div>
+          <div class="venc-row"><div><div class="venc-title">Presentación de informe</div><div class="venc-case mono">2023-0789</div></div><div class="venc-days ok">11 días</div></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h3>Agregar rápido</h3></div>
+          <div class="quick-add"><input placeholder="Nueva tarea o nota…"><button>+</button></div>
+        </div>
+      </div>
+
+      <!-- BITÁCORA -->
+      <div>
+        <div class="panel">
+          <div class="panel-head"><h3>Bitácora del estudio</h3><span class="count">Hoy</span></div>
+          <div class="bit-row"><div class="bit-time">08:12</div><div class="bit-text"><b>Cristian</b> registró contestación en <span class="mono">2023-0789</span></div></div>
+          <div class="bit-row"><div class="bit-time">08:45</div><div class="bit-text"><b>Sistema</b> generó alerta de vencimiento en <span class="mono">2023-0998</span></div></div>
+          <div class="bit-row"><div class="bit-time">09:02</div><div class="bit-text"><b>Cristian</b> agregó nota en <span class="mono">2023-0456</span></div></div>
+          <div class="bit-row"><div class="bit-time">09:20</div><div class="bit-text"><b>Cristian</b> confirmó asistencia a audiencia <span class="mono">2023-0456</span></div></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>
