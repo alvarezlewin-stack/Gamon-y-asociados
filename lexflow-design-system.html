@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LexFlow — Design System 1.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Public+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:            #0A0C0F;
+    --surface:       #12151A;
+    --surface-2:     #171B21;
+    --card:          #14171D;
+    --hairline:      #262B33;
+    --hairline-soft: #1D2127;
+    --text:          #ECEDEF;
+    --text-dim:      #8B929E;
+    --text-faint:    #5B616B;
+    --gold:          #C9A24B;
+    --gold-bright:   #E4C878;
+    --gold-dim:      rgba(201,162,75,0.12);
+    --danger:        #C9564B;
+    --success:       #4C9A6A;
+    --info:          #4C7FC9;
+    --radius:        10px;
+    --radius-lg:     16px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Public Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.5;
+  }
+  .serif{ font-family:'Fraunces', serif; }
+  .mono{ font-family:'IBM Plex Mono', monospace; }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--text-faint);
+  }
+
+  /* ===== LAYOUT SHELL ===== */
+  .app{ display:grid; grid-template-columns:232px 1fr; min-height:100vh; }
+  @media (max-width:860px){ .app{ grid-template-columns:1fr; } .sidebar{ display:none; } }
+
+  /* ===== SIDEBAR ===== */
+  .sidebar{
+    border-right:1px solid var(--hairline-soft);
+    padding:28px 16px;
+    display:flex; flex-direction:column; gap:32px;
+  }
+  .brandmark{ padding:0 8px; }
+  .brandmark .lf{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    letter-spacing:0.22em;
+    color:var(--gold-bright);
+  }
+  .brandmark .firm{
+    margin-top:6px;
+    font-size:11px;
+    color:var(--text-dim);
+    letter-spacing:0.06em;
+    border-top:1px solid var(--hairline-soft);
+    padding-top:6px;
+  }
+  nav{ display:flex; flex-direction:column; gap:2px; }
+  .nav-item{
+    display:flex; align-items:center; gap:12px;
+    padding:9px 10px;
+    border-radius:8px;
+    color:var(--text-dim);
+    font-size:13.5px;
+    font-weight:500;
+    text-decoration:none;
+    border-left:2px solid transparent;
+    transition:color .15s ease, background .15s ease;
+  }
+  .nav-item svg{ width:16px; height:16px; opacity:.8; }
+  .nav-item:hover{ color:var(--text); background:var(--surface-2); }
+  .nav-item.active{
+    color:var(--gold-bright);
+    background:var(--gold-dim);
+    border-left:2px solid var(--gold);
+  }
+  .nav-item.active svg{ opacity:1; }
+  .nav-foot{ margin-top:auto; }
+  .sync-pill{
+    font-size:11px; color:var(--text-faint);
+    display:flex; align-items:center; gap:6px;
+    padding:8px 10px;
+  }
+  .dot{ width:6px; height:6px; border-radius:50%; background:var(--success); }
+
+  /* ===== MAIN ===== */
+  main{ padding:28px 40px 80px; max-width:1180px; }
+  @media (max-width:860px){ main{ padding:20px 18px 60px; } }
+
+  .topbar{
+    display:flex; justify-content:space-between; align-items:flex-start;
+    margin-bottom:36px;
+  }
+  .greeting .eyebrow{ margin-bottom:6px; }
+  .greeting h1{ font-size:28px; font-weight:500; letter-spacing:-0.01em; }
+  .greeting p{ color:var(--text-dim); font-size:13.5px; margin-top:4px; }
+  .avatar{
+    width:34px; height:34px; border-radius:50%;
+    background:linear-gradient(135deg,#2b2f37,#1a1d22);
+    border:1px solid var(--hairline);
+  }
+
+  /* stat row */
+  .stats{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:32px; }
+  @media (max-width:700px){ .stats{ grid-template-columns:repeat(2,1fr); } }
+  .stat-card{
+    border:1px solid var(--hairline-soft);
+    background:var(--card);
+    border-radius:var(--radius);
+    padding:18px;
+  }
+  .stat-card .eyebrow{ margin-bottom:10px; }
+  .stat-card .num{ font-family:'Fraunces',serif; font-size:32px; font-weight:500; }
+  .stat-card .num span{ font-size:15px; color:var(--text-faint); font-family:'Public Sans',sans-serif; margin-left:4px; }
+
+  /* two-column: docket + alerts */
+  .grid-2{ display:grid; grid-template-columns:1.3fr 1fr; gap:16px; align-items:start; }
+  @media (max-width:860px){ .grid-2{ grid-template-columns:1fr; } }
+
+  .panel{
+    border:1px solid var(--hairline-soft);
+    background:var(--card);
+    border-radius:var(--radius-lg);
+    padding:22px;
+  }
+  .panel-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+  .panel-head h3{ font-size:14.5px; font-weight:600; }
+  .panel-head a{ font-size:12px; color:var(--gold); text-decoration:none; }
+
+  /* docket rail — signature element */
+  .docket{ position:relative; padding-left:22px; }
+  .docket::before{
+    content:''; position:absolute; left:5px; top:4px; bottom:4px;
+    width:1px; background:var(--hairline);
+  }
+  .docket-item{ position:relative; padding-bottom:22px; }
+  .docket-item:last-child{ padding-bottom:0; }
+  .docket-item::before{
+    content:''; position:absolute; left:-22px; top:3px;
+    width:9px; height:9px; border-radius:50%;
+    background:var(--bg); border:1.5px solid var(--text-faint);
+  }
+  .docket-item.current::before{ background:var(--gold); border-color:var(--gold); box-shadow:0 0 0 3px var(--gold-dim); }
+  .docket-time{ font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--text-dim); }
+  .docket-title{ font-size:14px; font-weight:600; margin:3px 0 4px; }
+  .docket-meta{ font-size:12px; color:var(--text-dim); display:flex; gap:8px; align-items:center; }
+
+  .tag{
+    font-size:10.5px; font-weight:600; letter-spacing:.02em;
+    padding:2px 8px; border-radius:20px; border:1px solid currentColor;
+  }
+  .tag.civil{ color:#7FA8D9; }
+  .tag.laboral{ color:#7FBF8F; }
+  .tag.comercial{ color:var(--gold); }
+  .tag.familia{ color:#C98CC9; }
+
+  .alert-row{
+    display:flex; gap:10px; padding:10px 0;
+    border-bottom:1px solid var(--hairline-soft);
+  }
+  .alert-row:last-child{ border-bottom:none; }
+  .alert-bar{ width:2px; border-radius:2px; flex-shrink:0; }
+  .alert-row.danger .alert-bar{ background:var(--danger); }
+  .alert-row.warn .alert-bar{ background:var(--gold); }
+  .alert-row.info .alert-bar{ background:var(--info); }
+  .alert-title{ font-size:13px; font-weight:600; }
+  .alert-sub{ font-size:11.5px; color:var(--text-dim); margin-top:2px; }
+
+  /* section headers for the doc */
+  .section{ margin-top:64px; }
+  .section-head{ margin-bottom:20px; }
+  .section-head .eyebrow{ color:var(--gold); margin-bottom:6px; }
+  .section-head h2{ font-family:'Fraunces',serif; font-size:22px; font-weight:500; }
+
+  /* color swatches */
+  .swatches{ display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:12px; }
+  .swatch{ border:1px solid var(--hairline-soft); border-radius:var(--radius); overflow:hidden; }
+  .swatch-color{ height:64px; }
+  .swatch-info{ padding:9px 11px; font-family:'IBM Plex Mono',monospace; }
+  .swatch-info .name{ font-size:11.5px; color:var(--text); }
+  .swatch-info .hex{ font-size:10.5px; color:var(--text-faint); }
+
+  /* type scale */
+  .type-row{ display:flex; align-items:baseline; gap:18px; padding:14px 0; border-bottom:1px solid var(--hairline-soft); }
+  .type-row .label{ width:130px; flex-shrink:0; } 
+  .type-row .label .eyebrow{ margin:0; }
+
+  /* buttons */
+  .btn-row{ display:flex; gap:12px; flex-wrap:wrap; }
+  .btn{
+    font-family:'Public Sans',sans-serif; font-size:13px; font-weight:600;
+    padding:10px 18px; border-radius:8px; cursor:pointer; border:1px solid transparent;
+  }
+  .btn-primary{ background:var(--gold); color:#14171D; }
+  .btn-secondary{ background:transparent; border-color:var(--hairline); color:var(--text); }
+  .btn-ghost{ background:transparent; color:var(--gold); }
+  .btn-danger{ background:transparent; border-color:var(--danger); color:var(--danger); }
+
+  /* future modules teaser */
+  .future-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+  @media (max-width:860px){ .future-grid{ grid-template-columns:repeat(2,1fr); } }
+  .future-card{
+    border:1px dashed var(--hairline);
+    border-radius:var(--radius);
+    padding:18px;
+    color:var(--text-dim);
+  }
+  .future-card h4{ color:var(--text); font-size:13.5px; margin-bottom:6px; }
+  .future-card p{ font-size:11.5px; }
+  .future-card .eyebrow{ color:var(--gold); margin-bottom:10px; }
+
+  table{ width:100%; border-collapse:collapse; font-size:13px; }
+  th{ text-align:left; font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--text-faint); font-weight:500; padding:10px 12px; border-bottom:1px solid var(--hairline); }
+  td{ padding:12px; border-bottom:1px solid var(--hairline-soft); }
+  tr:last-child td{ border-bottom:none; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brandmark">
+      <div class="lf">LEXFLOW™</div>
+      <div class="firm">GAMÓN &amp; ASOCIADOS</div>
+    </div>
+    <nav>
+      <a class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>Inicio</a>
+      <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Agenda</a>
+      <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Procesos</a>
+      <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="3.2"/><path d="M5 21c0-4 3-6 7-6s7 2 7 6"/></svg>Clientes</a>
+      <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Vencimientos</a>
+      <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/></svg>Documentos</a>
+      <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/><circle cx="12" cy="12" r="4"/></svg>IA Jurídica</a>
+      <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 01-4 0v-.1a1.7 1.7 0 00-1-1.6 1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.5-1H3a2 2 0 010-4h.1a1.7 1.7 0 001.5-1 1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.9.3H9a1.7 1.7 0 001-1.5V3a2 2 0 014 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.9V9a1.7 1.7 0 001.5 1H21a2 2 0 010 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>Configuración</a>
+    </nav>
+    <div class="nav-foot">
+      <div class="sync-pill"><span class="dot"></span> Sincronizado · 09:45</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main>
+    <div class="topbar">
+      <div class="greeting">
+        <div class="eyebrow">Domingo · 5 de julio, 2026</div>
+        <h1 class="serif">Buenos días, Cristian</h1>
+        <p>Resumen de tu actividad jurídica de hoy.</p>
+      </div>
+      <div class="avatar"></div>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card"><div class="eyebrow">Audiencias hoy</div><div class="num">5</div></div>
+      <div class="stat-card"><div class="eyebrow">Vencimientos · 7 días</div><div class="num">12</div></div>
+      <div class="stat-card"><div class="eyebrow">Procesos activos</div><div class="num">48</div></div>
+      <div class="stat-card"><div class="eyebrow">Tareas pendientes</div><div class="num">7</div></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-head"><h3>Próximas audiencias</h3><a href="#">Ver agenda completa →</a></div>
+        <div class="docket">
+          <div class="docket-item current">
+            <div class="docket-time">09:30</div>
+            <div class="docket-title">Audiencia Inicial</div>
+            <div class="docket-meta"><span class="tag civil">Civil</span> Cristian Alvarado · Juzgado 3° Civil, Sala B</div>
+          </div>
+          <div class="docket-item">
+            <div class="docket-time">11:00</div>
+            <div class="docket-title">Audiencia de Pruebas</div>
+            <div class="docket-meta"><span class="tag laboral">Laboral</span> María Fernández · Juzgado Laboral 1°</div>
+          </div>
+          <div class="docket-item">
+            <div class="docket-time">15:00</div>
+            <div class="docket-title">Audiencia de Conciliación</div>
+            <div class="docket-meta"><span class="tag comercial">Comercial</span> Empresa XYZ S.A. · Cámara de Comercio</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3>Alertas importantes</h3><a href="#">Ver todas →</a></div>
+        <div class="alert-row danger"><div class="alert-bar"></div><div><div class="alert-title">Apelación vence en 2 días</div><div class="alert-sub">Proceso 2023-0456</div></div></div>
+        <div class="alert-row warn"><div class="alert-bar"></div><div><div class="alert-title">Escrito pendiente de firma</div><div class="alert-sub">Proceso 2023-0789</div></div></div>
+        <div class="alert-row info"><div class="alert-bar"></div><div><div class="alert-title">Nuevo documento recibido</div><div class="alert-sub">Proceso 2023-0123</div></div></div>
+      </div>
+    </div>
+
+    <!-- ===================== DESIGN SYSTEM DOC ===================== -->
+    <div class="section">
+      <div class="section-head"><div class="eyebrow">01 · Identidad</div><h2>Sistema de color</h2></div>
+      <div class="swatches">
+        <div class="swatch"><div class="swatch-color" style="background:#0A0C0F"></div><div class="swatch-info"><div class="name">Fondo base</div><div class="hex">#0A0C0F</div></div></div>
+        <div class="swatch"><div class="swatch-color" style="background:#14171D"></div><div class="swatch-info"><div class="name">Superficie / tarjeta</div><div class="hex">#14171D</div></div></div>
+        <div class="swatch"><div class="swatch-color" style="background:#262B33"></div><div class="swatch-info"><div class="name">Hairline</div><div class="hex">#262B33</div></div></div>
+        <div class="swatch"><div class="swatch-color" style="background:#C9A24B"></div><div class="swatch-info"><div class="name">Dorado (marca)</div><div class="hex">#C9A24B</div></div></div>
+        <div class="swatch"><div class="swatch-color" style="background:#E4C878"></div><div class="swatch-info"><div class="name">Dorado hover</div><div class="hex">#E4C878</div></div></div>
+        <div class="swatch"><div class="swatch-color" style="background:#C9564B"></div><div class="swatch-info"><div class="name">Alerta</div><div class="hex">#C9564B</div></div></div>
+        <div class="swatch"><div class="swatch-color" style="background:#4C9A6A"></div><div class="swatch-info"><div class="name">Éxito</div><div class="hex">#4C9A6A</div></div></div>
+        <div class="swatch"><div class="swatch-color" style="background:#4C7FC9"></div><div class="swatch-info"><div class="name">Información</div><div class="hex">#4C7FC9</div></div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><div class="eyebrow">02 · Tipografía</div><h2>Escala tipográfica</h2></div>
+      <div class="type-row"><div class="label"><div class="eyebrow">Display / Fraunces</div></div><div class="serif" style="font-size:32px;">Buenos días, Cristian</div></div>
+      <div class="type-row"><div class="label"><div class="eyebrow">Título / Public Sans 600</div></div><div style="font-size:18px; font-weight:600;">Próximas audiencias</div></div>
+      <div class="type-row"><div class="label"><div class="eyebrow">Cuerpo / Public Sans 500</div></div><div style="font-size:14px;">Cristian Alvarado · Juzgado 3° Civil</div></div>
+      <div class="type-row"><div class="label"><div class="eyebrow">Dato / IBM Plex Mono</div></div><div class="mono" style="font-size:13px;">PROC-2023-0456 · 09:30</div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><div class="eyebrow">03 · Componentes</div><h2>Botones y etiquetas</h2></div>
+      <div class="btn-row" style="margin-bottom:18px;">
+        <button class="btn btn-primary">Nueva audiencia</button>
+        <button class="btn btn-secondary">Exportar</button>
+        <button class="btn btn-ghost">Ver detalles</button>
+        <button class="btn btn-danger">Eliminar</button>
+      </div>
+      <div class="btn-row">
+        <span class="tag civil">Civil</span>
+        <span class="tag laboral">Laboral</span>
+        <span class="tag comercial">Comercial</span>
+        <span class="tag familia">Familia</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><div class="eyebrow">04 · Componentes</div><h2>Tabla de procesos</h2></div>
+      <div class="panel" style="padding:0;">
+        <table>
+          <thead><tr><th>Expediente</th><th>Cliente</th><th>Materia</th><th>Estado</th><th>Próxima actuación</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">2023-0456</td><td>Cristian Alvarado</td><td><span class="tag civil">Civil</span></td><td>En audiencia</td><td>04/07 · 09:30</td></tr>
+            <tr><td class="mono">2023-0789</td><td>María Fernández</td><td><span class="tag laboral">Laboral</span></td><td>Despido injustificado</td><td>08/07 · Contestación</td></tr>
+            <tr><td class="mono">2023-0123</td><td>Empresa XYZ S.A.</td><td><span class="tag comercial">Comercial</span></td><td>Cobro de facturas</td><td>10/07 · Escrito</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><div class="eyebrow">05 · Roadmap visual</div><h2>Preparado para los próximos módulos</h2></div>
+      <div class="future-grid">
+        <div class="future-card"><div class="eyebrow">Próximamente</div><h4>Litigio asistido</h4><p>Seguimiento de estrategia y plazos procesales por caso.</p></div>
+        <div class="future-card"><div class="eyebrow">Próximamente</div><h4>OCR de documentos</h4><p>Digitalización y clasificación automática de expedientes.</p></div>
+        <div class="future-card"><div class="eyebrow">Próximamente</div><h4>Dashboard inteligente</h4><p>Priorización automática de tareas críticas del día.</p></div>
+        <div class="future-card"><div class="eyebrow">Próximamente</div><h4>Multiestudio</h4><p>Un mismo LexFlow, distintos estudios y equipos.</p></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+</body>
+</html>
