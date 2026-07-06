@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LexFlow — Centro de Expediente</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Public+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0C0F; --surface:#12151A; --card:#14171D;
+    --hairline:#262B33; --hairline-soft:#1D2127;
+    --text:#ECEDEF; --text-dim:#8B929E; --text-faint:#5B616B;
+    --gold:#C9A24B; --gold-bright:#E4C878; --gold-dim:rgba(201,162,75,0.12);
+    --danger:#C9564B; --danger-dim:rgba(201,86,75,0.12);
+    --success:#4C9A6A; --success-dim:rgba(76,154,106,0.12);
+    --info:#4C7FC9; --info-dim:rgba(76,127,201,0.12);
+    --purple:#9B7FC9; --purple-dim:rgba(155,127,201,0.12);
+    --radius:10px; --radius-lg:16px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{ background:var(--bg); color:var(--text); font-family:'Public Sans',sans-serif; line-height:1.5; -webkit-font-smoothing:antialiased; }
+  .serif{ font-family:'Fraunces',serif; }
+  .mono{ font-family:'IBM Plex Mono',monospace; }
+  .eyebrow{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--text-faint); }
+  a{ color:inherit; }
+
+  .app{ display:grid; grid-template-columns:220px 1fr; min-height:100vh; }
+  @media (max-width:900px){ .app{ grid-template-columns:1fr; } .sidebar{ display:none; } }
+  .sidebar{ border-right:1px solid var(--hairline-soft); padding:26px 16px; }
+  .brandmark .lf{ font-family:'IBM Plex Mono',monospace; font-size:13px; letter-spacing:.22em; color:var(--gold-bright); }
+  .brandmark .firm{ margin-top:6px; font-size:11px; color:var(--text-dim); border-top:1px solid var(--hairline-soft); padding-top:6px; }
+
+  main{ padding:26px 32px 90px; max-width:1280px; }
+  @media (max-width:900px){ main{ padding:18px 16px 70px; } }
+  .back{ font-size:12.5px; color:var(--text-dim); text-decoration:none; display:inline-block; margin-bottom:14px; }
+
+  /* ===== 1. CABECERA INTELIGENTE ===== */
+  .header-panel{ border:1px solid var(--hairline-soft); background:var(--card); border-radius:var(--radius-lg); padding:22px; margin-bottom:16px; }
+  .header-top{ display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:14px; margin-bottom:18px; }
+  .header-title .nurej{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--text-dim); margin-bottom:4px; }
+  .header-title h1{ font-size:21px; font-weight:500; margin-bottom:8px; }
+  .badge-row{ display:flex; gap:8px; flex-wrap:wrap; }
+  .badge{ font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:20px; letter-spacing:.02em; }
+  .badge.tag-civil{ color:#7FA8D9; border:1px solid #7FA8D9; }
+  .badge.risk-high{ background:var(--danger-dim); color:var(--danger); }
+  .badge.risk-med{ background:var(--gold-dim); color:var(--gold-bright); }
+  .badge.priority-high{ background:var(--danger-dim); color:var(--danger); }
+  .badge.status{ background:var(--info-dim); color:var(--info); }
+
+  .header-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--hairline-soft); border:1px solid var(--hairline-soft); border-radius:var(--radius); overflow:hidden; }
+  @media (max-width:760px){ .header-grid{ grid-template-columns:repeat(2,1fr); } }
+  .hg-cell{ background:var(--card); padding:12px 14px; }
+  .hg-cell .k{ font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--text-faint); margin-bottom:4px; }
+  .hg-cell .v{ font-size:13px; font-weight:600; }
+  .hg-cell .v.dim{ color:var(--text-dim); font-weight:500; }
+  .hg-cell .v.danger{ color:var(--danger); }
+  .hg-cell .v.gold{ color:var(--gold-bright); }
+
+  /* ===== FLUJO PROCESAL ===== */
+  .flow-panel{ border:1px solid var(--hairline-soft); background:var(--card); border-radius:var(--radius-lg); padding:20px 22px; margin-bottom:16px; overflow-x:auto; }
+  .flow-track{ display:flex; align-items:center; min-width:640px; }
+  .flow-step{ display:flex; flex-direction:column; align-items:center; flex:1; position:relative; }
+  .flow-dot{ width:12px; height:12px; border-radius:50%; background:var(--bg); border:2px solid var(--text-faint); z-index:1; }
+  .flow-step.done .flow-dot{ background:var(--success); border-color:var(--success); }
+  .flow-step.current .flow-dot{ background:var(--gold); border-color:var(--gold); box-shadow:0 0 0 4px var(--gold-dim); width:14px; height:14px; }
+  .flow-line{ position:absolute; top:6px; left:50%; width:100%; height:2px; background:var(--hairline); z-index:0; }
+  .flow-step.done .flow-line{ background:var(--success); }
+  .flow-step:last-child .flow-line{ display:none; }
+  .flow-label{ margin-top:10px; font-size:11px; color:var(--text-faint); text-align:center; }
+  .flow-step.current .flow-label{ color:var(--gold-bright); font-weight:700; }
+  .flow-step.done .flow-label{ color:var(--text-dim); }
+
+  /* ===== BARRA DE ACCIONES RÁPIDAS ===== */
+  .quick-actions{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
+  .qa-btn{ display:flex; align-items:center; gap:7px; font-size:12.5px; font-weight:600; padding:9px 14px; border-radius:8px; border:1px solid var(--hairline-soft); background:var(--card); color:var(--text); cursor:pointer; white-space:nowrap; }
+  .qa-btn svg{ width:14px; height:14px; opacity:.85; }
+  .qa-btn.primary{ background:var(--gold); color:#14171D; border-color:var(--gold); }
+  .qa-btn.ai{ color:var(--purple); border-color:var(--purple); }
+
+  /* ===== LAYOUT PRINCIPAL: TIMELINE + IA ===== */
+  .work-grid{ display:grid; grid-template-columns:1.5fr 1fr; gap:16px; align-items:start; }
+  @media (max-width:980px){ .work-grid{ grid-template-columns:1fr; } }
+  .panel{ border:1px solid var(--hairline-soft); background:var(--card); border-radius:var(--radius-lg); padding:20px; margin-bottom:16px; }
+  .panel-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+  .panel-head h3{ font-size:14px; font-weight:600; }
+  .panel-head .count{ font-size:11px; color:var(--text-faint); }
+
+  /* timeline filters */
+  .tl-filters{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; }
+  .tl-chip{ font-size:10.5px; font-weight:600; padding:4px 10px; border-radius:20px; border:1px solid var(--hairline-soft); color:var(--text-dim); }
+  .tl-chip.active{ border-color:var(--gold); color:var(--gold-bright); }
+
+  /* ===== TIMELINE JURÍDICO (docket rail extendido) ===== */
+  .docket{ position:relative; padding-left:30px; }
+  .docket::before{ content:''; position:absolute; left:9px; top:6px; bottom:6px; width:1px; background:var(--hairline); }
+  .docket-item{ position:relative; padding-bottom:22px; }
+  .docket-item:last-child{ padding-bottom:0; }
+  .tl-icon{ position:absolute; left:-30px; top:-2px; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--bg); border:1.5px solid var(--hairline); }
+  .tl-icon svg{ width:11px; height:11px; }
+  .docket-item.type-audiencia .tl-icon{ border-color:var(--gold); color:var(--gold-bright); }
+  .docket-item.type-documento .tl-icon{ border-color:var(--info); color:var(--info); }
+  .docket-item.type-vencimiento .tl-icon{ border-color:var(--danger); color:var(--danger); }
+  .docket-item.type-nota .tl-icon{ border-color:var(--text-faint); color:var(--text-dim); }
+  .docket-item.type-estado .tl-icon{ border-color:var(--purple); color:var(--purple); }
+  .docket-item.type-hito .tl-icon{ border-color:var(--success); color:var(--success); }
+  .docket-date{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text-dim); }
+  .docket-title{ font-size:13.5px; font-weight:600; margin:3px 0 2px; }
+  .docket-desc{ font-size:12px; color:var(--text-dim); }
+  .docket-type-label{ font-size:9.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-faint); margin-left:8px; }
+
+  /* ===== PANEL IA JURÍDICA ===== */
+  .ai-header{ display:flex; align-items:center; gap:8px; margin-bottom:4px; }
+  .ai-dot{ width:6px; height:6px; border-radius:50%; background:var(--purple); box-shadow:0 0 0 3px var(--purple-dim); }
+  .ai-section{ margin-bottom:16px; }
+  .ai-section:last-child{ margin-bottom:0; }
+  .ai-section-title{ font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+  .ai-row{ display:flex; gap:9px; padding:8px 0; border-bottom:1px solid var(--hairline-soft); }
+  .ai-row:last-child{ border-bottom:none; }
+  .ai-bar{ width:2px; border-radius:2px; flex-shrink:0; }
+  .ai-row.risk .ai-bar{ background:var(--danger); }
+  .ai-row.step .ai-bar{ background:var(--info); }
+  .ai-row.pending .ai-bar{ background:var(--gold); }
+  .ai-row.missing .ai-bar{ background:var(--text-faint); }
+  .ai-row.opportunity .ai-bar{ background:var(--success); }
+  .ai-text{ font-size:12.5px; }
+  .ai-sub{ font-size:11px; color:var(--text-faint); margin-top:2px; }
+
+  /* ===== CENTRO DOCUMENTAL ===== */
+  .doc-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  @media (max-width:700px){ .doc-grid{ grid-template-columns:repeat(2,1fr); } }
+  .doc-card{ border:1px dashed var(--hairline); border-radius:var(--radius); padding:14px; text-align:center; }
+  .doc-card svg{ width:20px; height:20px; color:var(--text-faint); margin-bottom:8px; }
+  .doc-card .name{ font-size:12px; font-weight:600; }
+  .doc-card .count{ font-size:10.5px; color:var(--text-faint); margin-top:2px; }
+  .doc-card.has-items{ border-style:solid; border-color:var(--hairline-soft); }
+  .doc-card.has-items svg{ color:var(--gold-bright); }
+
+  /* ===== FUTURO / DISPOSITIVO ===== */
+  .future-row{ display:flex; gap:8px; flex-wrap:wrap; }
+  .future-chip{ display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text-faint); border:1px dashed var(--hairline); border-radius:20px; padding:6px 12px; }
+  .future-chip svg{ width:13px; height:13px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brandmark"><div class="lf">LEXFLOW™</div><div class="firm">GAMÓN &amp; ASOCIADOS</div></div>
+  </aside>
+
+  <main>
+    <a class="back" href="#">← Volver a procesos</a>
+
+    <!-- 1. CABECERA INTELIGENTE -->
+    <div class="header-panel">
+      <div class="header-top">
+        <div class="header-title">
+          <div class="nurej mono">NUREJ 2023-0456-CIV</div>
+          <h1 class="serif">Alvarado c/ Gobierno Autónomo Municipal</h1>
+          <div class="badge-row">
+            <span class="badge tag-civil">Civil · Ordinario</span>
+            <span class="badge status">En audiencia</span>
+            <span class="badge priority-high">Prioridad alta</span>
+            <span class="badge risk-med">Riesgo medio</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-grid">
+        <div class="hg-cell"><div class="k">Cliente</div><div class="v">Cristian Alvarado</div></div>
+        <div class="hg-cell"><div class="k">Contraparte</div><div class="v">G.A. Municipal</div></div>
+        <div class="hg-cell"><div class="k">Juez / Fiscal</div><div class="v dim">Dra. R. Peñaranda</div></div>
+        <div class="hg-cell"><div class="k">Institución</div><div class="v dim">Juzgado 3° Civil, Sala B</div></div>
+        <div class="hg-cell"><div class="k">Próxima actuación</div><div class="v gold">Audiencia inicial</div></div>
+        <div class="hg-cell"><div class="k">Próxima audiencia</div><div class="v mono">04/07/2026 · 09:30</div></div>
+        <div class="hg-cell"><div class="k">Tiempo desde inicio</div><div class="v dim">1 año, 4 meses</div></div>
+        <div class="hg-cell"><div class="k">Tiempo sin actividad</div><div class="v danger">18 días</div></div>
+      </div>
+    </div>
+
+    <!-- 6. FLUJO PROCESAL -->
+    <div class="flow-panel">
+      <div class="flow-track">
+        <div class="flow-step done"><div class="flow-line"></div><div class="flow-dot"></div><div class="flow-label">Presentación</div></div>
+        <div class="flow-step done"><div class="flow-line"></div><div class="flow-dot"></div><div class="flow-label">Admisión</div></div>
+        <div class="flow-step done"><div class="flow-line"></div><div class="flow-dot"></div><div class="flow-label">Contestación</div></div>
+        <div class="flow-step current"><div class="flow-line"></div><div class="flow-dot"></div><div class="flow-label">Prueba</div></div>
+        <div class="flow-step"><div class="flow-line"></div><div class="flow-dot"></div><div class="flow-label">Audiencia</div></div>
+        <div class="flow-step"><div class="flow-line"></div><div class="flow-dot"></div><div class="flow-label">Sentencia</div></div>
+        <div class="flow-step"><div class="flow-line"></div><div class="flow-dot"></div><div class="flow-label">Apelación</div></div>
+        <div class="flow-step"><div class="flow-line"></div><div class="flow-dot"></div><div class="flow-label">Ejecución</div></div>
+      </div>
+    </div>
+
+    <!-- 5. BARRA DE ACCIONES RÁPIDAS -->
+    <div class="quick-actions">
+      <button class="qa-btn primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Nueva actuación</button>
+      <button class="qa-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/></svg>Nuevo documento</button>
+      <button class="qa-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Nueva audiencia</button>
+      <button class="qa-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16M4 12h10M4 18h13"/></svg>Nueva nota</button>
+      <button class="qa-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 11l3 3 8-8M20 12v6a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg>Nueva tarea</button>
+      <button class="qa-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3h12v14l-4-3-4 3-4-3z"/></svg>Agregar evidencia</button>
+      <button class="qa-btn ai"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v3M12 18v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M3 12h3M18 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/><circle cx="12" cy="12" r="3.5"/></svg>Consultar IA</button>
+    </div>
+
+    <div class="work-grid">
+      <!-- 2. TIMELINE JURÍDICO -->
+      <div>
+        <div class="panel">
+          <div class="panel-head"><h3>Timeline jurídico</h3><span class="count">14 eventos</span></div>
+          <div class="tl-filters">
+            <span class="tl-chip active">Todos</span>
+            <span class="tl-chip">Actuaciones</span>
+            <span class="tl-chip">Audiencias</span>
+            <span class="tl-chip">Documentos</span>
+            <span class="tl-chip">Vencimientos</span>
+            <span class="tl-chip">Notas</span>
+          </div>
+          <div class="docket">
+            <div class="docket-item type-hito">
+              <div class="tl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.9 6.5L21 9.3l-4.9 4.3L17.5 21 12 17.5 6.5 21l1.4-7.4L3 9.3l6.1-.8z"/></svg></div>
+              <div class="docket-date">02/03/2023</div>
+              <div class="docket-title">Proceso iniciado <span class="docket-type-label">Hito</span></div>
+              <div class="docket-desc">Presentación de demanda admitida por el juzgado.</div>
+            </div>
+            <div class="docket-item type-documento">
+              <div class="tl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/></svg></div>
+              <div class="docket-date">18/05/2023</div>
+              <div class="docket-title">Contestación de demanda <span class="docket-type-label">Documento</span></div>
+              <div class="docket-desc">Municipio contesta y opone excepciones.</div>
+            </div>
+            <div class="docket-item type-estado">
+              <div class="tl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4v16M4 4h14l-2 4 2 4H4"/></svg></div>
+              <div class="docket-date">02/06/2023</div>
+              <div class="docket-title">Cambio de estado <span class="docket-type-label">Estado</span></div>
+              <div class="docket-desc">De "Admitido" a "En etapa probatoria".</div>
+            </div>
+            <div class="docket-item type-vencimiento">
+              <div class="tl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+              <div class="docket-date">16/06/2026</div>
+              <div class="docket-title">Vencimiento próximo <span class="docket-type-label">Vencimiento</span></div>
+              <div class="docket-desc">Plazo para ofrecer prueba adicional — 3 días hábiles.</div>
+            </div>
+            <div class="docket-item type-nota">
+              <div class="tl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h10M4 18h13"/></svg></div>
+              <div class="docket-date">20/06/2026</div>
+              <div class="docket-title">Nota interna <span class="docket-type-label">Nota</span></div>
+              <div class="docket-desc">Cliente confirma disponibilidad de testigo clave.</div>
+            </div>
+            <div class="docket-item type-audiencia">
+              <div class="tl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></div>
+              <div class="docket-date">04/07/2026 · 09:30</div>
+              <div class="docket-title">Audiencia inicial <span class="docket-type-label">Audiencia</span></div>
+              <div class="docket-desc">Próxima actuación — preparar alegatos y pliego de posiciones.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. PANEL DE IA JURÍDICA -->
+      <div>
+        <div class="panel">
+          <div class="ai-header"><span class="ai-dot"></span><h3>Copiloto jurídico</h3></div>
+          <div class="eyebrow" style="margin-bottom:16px;">Análisis generado sobre este expediente</div>
+
+          <div class="ai-section">
+            <div class="ai-section-title" style="color:var(--danger);">Riesgos detectados</div>
+            <div class="ai-row risk"><div class="ai-bar"></div><div><div class="ai-text">Excepción de prescripción sin respuesta formal</div><div class="ai-sub">Vence en 3 días hábiles</div></div></div>
+          </div>
+
+          <div class="ai-section">
+            <div class="ai-section-title" style="color:var(--info);">Próximos pasos sugeridos</div>
+            <div class="ai-row step"><div class="ai-bar"></div><div><div class="ai-text">Preparar pliego de posiciones para la audiencia inicial</div></div></div>
+            <div class="ai-row step"><div class="ai-bar"></div><div><div class="ai-text">Confirmar asistencia del testigo ofrecido</div></div></div>
+          </div>
+
+          <div class="ai-section">
+            <div class="ai-section-title" style="color:var(--gold-bright);">Escritos pendientes</div>
+            <div class="ai-row pending"><div class="ai-bar"></div><div><div class="ai-text">Recurso de apelación sin presentar</div></div></div>
+          </div>
+
+          <div class="ai-section">
+            <div class="ai-section-title" style="color:var(--text-dim);">Documentos faltantes</div>
+            <div class="ai-row missing"><div class="ai-bar"></div><div><div class="ai-text">Poder notariado del cliente actualizado</div></div></div>
+          </div>
+
+          <div class="ai-section">
+            <div class="ai-section-title" style="color:var(--success);">Oportunidades estratégicas</div>
+            <div class="ai-row opportunity"><div class="ai-bar"></div><div><div class="ai-text">Posible acuerdo conciliatorio antes de audiencia de pruebas</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. CENTRO DOCUMENTAL -->
+    <div class="panel">
+      <div class="panel-head"><h3>Centro documental</h3><span class="count">7 categorías</span></div>
+      <div class="doc-grid">
+        <div class="doc-card has-items"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/></svg><div class="name">Memoriales</div><div class="count">3 archivos</div></div>
+        <div class="doc-card has-items"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/></svg><div class="name">Demandas</div><div class="count">1 archivo</div></div>
+        <div class="doc-card has-items"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/></svg><div class="name">Contestaciones</div><div class="count">1 archivo</div></div>
+        <div class="doc-card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 11l3 3 8-8M20 12v6a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg><div class="name">Pruebas</div><div class="count">Sin archivos</div></div>
+        <div class="doc-card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3.2"/><path d="M4 12a8 8 0 0116 0"/></svg><div class="name">Fotografías</div><div class="count">Sin archivos</div></div>
+        <div class="doc-card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4l16 8-16 8z"/></svg><div class="name">Videos</div><div class="count">Sin archivos</div></div>
+        <div class="doc-card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v12M8 8l4-5 4 5"/><path d="M5 14v4a2 2 0 002 2h10a2 2 0 002-2v-4"/></svg><div class="name">Audios</div><div class="count">Sin archivos</div></div>
+        <div class="doc-card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3h12v18H6z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg><div class="name">Informes</div><div class="count">Sin archivos</div></div>
+      </div>
+    </div>
+
+    <!-- 7. RESERVA DE INTEGRACIONES FUTURAS -->
+    <div class="panel" style="background:transparent; border-style:dashed;">
+      <div class="panel-head"><h3 style="color:var(--text-dim);">Capacidades futuras del dispositivo</h3></div>
+      <div class="future-row">
+        <div class="future-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21s7-6.5 7-11a7 7 0 10-14 0c0 4.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>GPS</div>
+        <div class="future-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7l1.5-3h5L16 7"/><circle cx="12" cy="13.5" r="3.5"/></svg>Cámara</div>
+        <div class="future-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v4"/></svg>Grabación</div>
+        <div class="future-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 20v-6M8 20h8"/><path d="M4 8a8 5 0 0016 0"/></svg>Dictado por voz</div>
+        <div class="future-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6"/></svg>OCR</div>
+        <div class="future-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v3M12 18v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M3 12h3M18 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/><circle cx="12" cy="12" r="3.5"/></svg>IA</div>
+        <div class="future-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 8l-6-6H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2z"/><path d="M14 2v6h6"/></svg>Adjuntos</div>
+        <div class="future-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>Notificaciones</div>
+        <div class="future-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M18 10a5 5 0 00-9.6-1.8A4.5 4.5 0 006 17h12a3.8 3.8 0 000-7.6z"/></svg>Sincronización</div>
+      </div>
+    </div>
+
+  </main>
+</div>
+</body>
+</html>
