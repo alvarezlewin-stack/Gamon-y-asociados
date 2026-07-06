@@ -56,12 +56,14 @@ Reutilizable en: Agenda, Vista de Proceso, Bitácora.
 | D-002 | Docket rail como elemento de firma | Diferenciación visual única, ligada al dominio jurídico | ✅ Aprobado |
 | D-003 | Tags de materia sin relleno sólido | Consistencia con sistema de tarjetas outline | ✅ Aprobado |
 | D-004 | Doble marca siempre visible (LexFlow™ + estudio) | Requisito de negocio, multiestudio futuro | ✅ Aprobado |
+| D-005 | Pantalla de Proceso (listado + expediente) reutiliza el docket rail como cronología del caso | Consistencia visual entre Inicio y Proceso, misma metáfora | ✅ Aprobado |
+| D-006 | Filtros de materia como chips, no dropdown | Más rápido de tocar en mobile, menos fricción | ✅ Aprobado |
+| D-007 | Estados vacío y de carga (skeleton) incluidos desde la primera versión de Proceso | Evitar retrabajo cuando Claude A conecte datos reales de `ProcesoService` | ✅ Aprobado |
 
 ## 3. Próximas pantallas a diseñar (según ROADMAP.md oficial)
 
-1. **Proceso — alta / listado / vista de expediente** (siguiente paso autorizado; el dominio
-   de datos ya está completo desde Arquitectura 0.9 — `ProcesoService`, `ProcesoParteService`).
-2. Actuaciones + Cronología
+1. ~~Proceso — alta / listado / vista de expediente~~ ✅ Entregado (`lexflow-proceso.html`) — incluye estados vacío y de carga.
+2. **Actuaciones + Cronología** ← siguiente
 3. Jornada Jurídica + Bitácora
 4. Gestión documental (sujeta a decisión de almacenamiento de archivos, ver ROADMAP.md fase 3)
 5. Ruta Inteligente (GPS) + Centro de Inteligencia Jurídica (IA)
