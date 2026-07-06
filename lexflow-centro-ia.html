@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LexFlow — Centro de Inteligencia Jurídica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Public+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0C0F; --card:#14171D;
+    --hairline:#262B33; --hairline-soft:#1D2127;
+    --text:#ECEDEF; --text-dim:#8B929E; --text-faint:#5B616B;
+    --gold:#C9A24B; --gold-bright:#E4C878; --gold-dim:rgba(201,162,75,0.12);
+    --danger:#C9564B; --danger-dim:rgba(201,86,75,0.12);
+    --success:#4C9A6A; --success-dim:rgba(76,154,106,0.12);
+    --info:#4C7FC9; --info-dim:rgba(76,127,201,0.12);
+    --purple:#9B7FC9; --purple-dim:rgba(155,127,201,0.14);
+    --radius:10px; --radius-lg:16px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{ background:var(--bg); color:var(--text); font-family:'Public Sans',sans-serif; line-height:1.5; -webkit-font-smoothing:antialiased; }
+  .serif{ font-family:'Fraunces',serif; }
+  .mono{ font-family:'IBM Plex Mono',monospace; }
+  .eyebrow{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--text-faint); }
+
+  .app{ display:grid; grid-template-columns:220px 1fr; min-height:100vh; }
+  @media (max-width:900px){ .app{ grid-template-columns:1fr; } .sidebar{ display:none; } }
+  .sidebar{ border-right:1px solid var(--hairline-soft); padding:26px 16px; }
+  .brandmark .lf{ font-family:'IBM Plex Mono',monospace; font-size:13px; letter-spacing:.22em; color:var(--gold-bright); }
+  .brandmark .firm{ margin-top:6px; font-size:11px; color:var(--text-dim); border-top:1px solid var(--hairline-soft); padding-top:6px; }
+
+  main{ padding:26px 32px 90px; max-width:1240px; }
+  @media (max-width:900px){ main{ padding:18px 16px 70px; } }
+
+  .top{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+  .ai-live-dot{ width:7px; height:7px; border-radius:50%; background:var(--purple); box-shadow:0 0 0 4px var(--purple-dim); }
+  .top h1{ font-size:24px; font-weight:500; }
+  .top-sub{ color:var(--text-dim); font-size:13px; margin-bottom:24px; }
+
+  /* consulta jurídica — barra de comando, no chat */
+  .query-panel{ border:1px solid var(--hairline-soft); background:var(--card); border-radius:var(--radius-lg); padding:22px; margin-bottom:20px; }
+  .query-bar{ display:flex; gap:10px; background:var(--bg); border:1px solid var(--hairline-soft); border-radius:10px; padding:12px 14px; align-items:center; }
+  .query-bar svg{ width:16px; height:16px; color:var(--purple); flex-shrink:0; }
+  .query-bar input{ flex:1; background:transparent; border:none; color:var(--text); font-size:14px; }
+  .query-bar input::placeholder{ color:var(--text-faint); }
+  .query-bar button{ background:var(--purple); color:#14171D; border:none; border-radius:7px; padding:8px 14px; font-weight:700; font-size:12px; cursor:pointer; }
+  .query-suggestions{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+  .qs-chip{ font-size:11.5px; color:var(--text-dim); border:1px solid var(--hairline-soft); border-radius:20px; padding:6px 12px; cursor:pointer; }
+
+  .stats{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
+  @media (max-width:700px){ .stats{ grid-template-columns:repeat(2,1fr); } }
+  .stat-card{ border:1px solid var(--hairline-soft); background:var(--card); border-radius:var(--radius); padding:16px; }
+  .stat-card .num{ font-family:'Fraunces',serif; font-size:26px; font-weight:500; }
+  .stat-card.alert .num{ color:var(--danger); }
+  .stat-card.info .num{ color:var(--purple); }
+
+  .grid-2{ display:grid; grid-template-columns:1.3fr 1fr; gap:16px; align-items:start; }
+  @media (max-width:980px){ .grid-2{ grid-template-columns:1fr; } }
+  .panel{ border:1px solid var(--hairline-soft); background:var(--card); border-radius:var(--radius-lg); padding:20px; margin-bottom:16px; }
+  .panel-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+  .panel-head h3{ font-size:14px; font-weight:600; }
+  .panel-head .count{ font-size:11px; color:var(--text-faint); }
+
+  /* radar de riesgos — cruza todos los casos */
+  .risk-row{ display:flex; gap:10px; padding:11px 0; border-bottom:1px solid var(--hairline-soft); align-items:flex-start; }
+  .risk-row:last-child{ border-bottom:none; }
+  .risk-bar{ width:2px; border-radius:2px; flex-shrink:0; align-self:stretch; }
+  .risk-row.high .risk-bar{ background:var(--danger); }
+  .risk-row.med .risk-bar{ background:var(--gold); }
+  .risk-title{ font-size:13px; font-weight:600; }
+  .risk-case{ font-size:11px; color:var(--text-faint); margin-top:2px; }
+  .risk-sev{ font-size:9.5px; font-weight:700; text-transform:uppercase; padding:2px 7px; border-radius:20px; margin-left:auto; white-space:nowrap; }
+  .risk-sev.high{ background:var(--danger-dim); color:var(--danger); }
+  .risk-sev.med{ background:var(--gold-dim); color:var(--gold-bright); }
+
+  /* sugerencias */
+  .sug-row{ display:flex; gap:9px; padding:9px 0; border-bottom:1px solid var(--hairline-soft); }
+  .sug-row:last-child{ border-bottom:none; }
+  .sug-bar{ width:2px; border-radius:2px; background:var(--info); flex-shrink:0; }
+  .sug-text{ font-size:12.5px; }
+  .sug-case{ font-size:10.5px; color:var(--text-faint); margin-top:1px; }
+
+  /* cola de análisis documental */
+  .doc-row{ display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--hairline-soft); }
+  .doc-row:last-child{ border-bottom:none; }
+  .doc-icon{ width:28px; height:28px; border-radius:8px; background:var(--hairline-soft); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .doc-icon svg{ width:14px; height:14px; color:var(--text-dim); }
+  .doc-name{ font-size:12.5px; font-weight:600; }
+  .doc-case{ font-size:10.5px; color:var(--text-faint); }
+  .doc-status{ margin-left:auto; font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; white-space:nowrap; }
+  .doc-status.done{ background:var(--success-dim); color:var(--success); }
+  .doc-status.pending{ background:var(--purple-dim); color:var(--purple); }
+
+  /* jurisprudencia placeholder */
+  .juris-card{ border:1px dashed var(--hairline); border-radius:var(--radius); padding:16px; text-align:center; color:var(--text-dim); }
+  .juris-card svg{ width:22px; height:22px; margin-bottom:8px; color:var(--text-faint); }
+  .juris-card p{ font-size:12px; max-width:260px; margin:0 auto; }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brandmark"><div class="lf">LEXFLOW™</div><div class="firm">GAMÓN &amp; ASOCIADOS</div></div>
+  </aside>
+
+  <main>
+    <div class="top"><span class="ai-live-dot"></span><h1 class="serif">Centro de Inteligencia Jurídica</h1></div>
+    <div class="top-sub">Análisis cruzado de los 48 procesos activos del estudio.</div>
+
+    <!-- CONSULTA JURÍDICA (no chat) -->
+    <div class="query-panel">
+      <div class="eyebrow" style="margin-bottom:10px;">Consulta jurídica</div>
+      <div class="query-bar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input placeholder="Ej. ¿Qué procesos tienen plazos vencidos sin actuación registrada?">
+        <button>Consultar</button>
+      </div>
+      <div class="query-suggestions">
+        <span class="qs-chip">Procesos con riesgo alto esta semana</span>
+        <span class="qs-chip">Resumir el expediente 2023-0456</span>
+        <span class="qs-chip">Jurisprudencia sobre excepción de prescripción</span>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card alert"><div class="eyebrow">Riesgos activos</div><div class="num">6</div></div>
+      <div class="stat-card"><div class="eyebrow">Sugerencias pendientes</div><div class="num">11</div></div>
+      <div class="stat-card info"><div class="eyebrow">Documentos en análisis</div><div class="num">4</div></div>
+      <div class="stat-card"><div class="eyebrow">Consultas esta semana</div><div class="num">23</div></div>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <!-- RADAR DE RIESGOS -->
+        <div class="panel">
+          <div class="panel-head"><h3>Radar de riesgos</h3><span class="count">Todos los procesos</span></div>
+          <div class="risk-row high"><div class="risk-bar"></div><div><div class="risk-title">Excepción de prescripción sin respuesta</div><div class="risk-case mono">2023-0456 · Alvarado c/ G.A. Municipal</div></div><span class="risk-sev high">Alto</span></div>
+          <div class="risk-row high"><div class="risk-bar"></div><div><div class="risk-title">Plazo de contestación vence hoy</div><div class="risk-case mono">2023-0998 · Pedro Gómez</div></div><span class="risk-sev high">Alto</span></div>
+          <div class="risk-row med"><div class="risk-bar"></div><div><div class="risk-title">18 días sin actividad registrada</div><div class="risk-case mono">2023-0456 · Alvarado c/ G.A. Municipal</div></div><span class="risk-sev med">Medio</span></div>
+          <div class="risk-row med"><div class="risk-bar"></div><div><div class="risk-title">Documento de prueba pendiente de adjuntar</div><div class="risk-case mono">2023-0789 · María Fernández</div></div><span class="risk-sev med">Medio</span></div>
+        </div>
+
+        <!-- ANÁLISIS DOCUMENTAL -->
+        <div class="panel">
+          <div class="panel-head"><h3>Cola de análisis documental</h3><span class="count">4 documentos</span></div>
+          <div class="doc-row">
+            <div class="doc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/></svg></div>
+            <div><div class="doc-name">Contestación_XYZ.pdf</div><div class="doc-case mono">2023-0123</div></div>
+            <div class="doc-status done">Analizado</div>
+          </div>
+          <div class="doc-row">
+            <div class="doc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/></svg></div>
+            <div><div class="doc-name">Prueba_testimonial.pdf</div><div class="doc-case mono">2023-0456</div></div>
+            <div class="doc-status pending">En cola</div>
+          </div>
+          <div class="doc-row">
+            <div class="doc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/></svg></div>
+            <div><div class="doc-name">Poder_notariado.pdf</div><div class="doc-case mono">2023-0456</div></div>
+            <div class="doc-status pending">En cola</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <!-- SUGERENCIAS GLOBALES -->
+        <div class="panel">
+          <div class="panel-head"><h3>Sugerencias del día</h3><span class="count">11</span></div>
+          <div class="sug-row"><div class="sug-bar"></div><div><div class="sug-text">Preparar pliego de posiciones para audiencia inicial</div><div class="sug-case mono">2023-0456</div></div></div>
+          <div class="sug-row"><div class="sug-bar"></div><div><div class="sug-text">Confirmar testigo antes de la audiencia de pruebas</div><div class="sug-case mono">2023-0789</div></div></div>
+          <div class="sug-row"><div class="sug-bar"></div><div><div class="sug-text">Enviar propuesta de conciliación a la contraparte</div><div class="sug-case mono">2023-0123</div></div></div>
+        </div>
+
+        <!-- JURISPRUDENCIA -->
+        <div class="panel">
+          <div class="panel-head"><h3>Búsqueda de jurisprudencia</h3></div>
+          <div class="juris-card">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/></svg>
+            <p>Espacio reservado para búsqueda semántica de sentencias y precedentes relacionados al proceso activo.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>
