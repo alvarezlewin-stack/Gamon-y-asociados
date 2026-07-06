@@ -47,3 +47,36 @@ Todas las consultas de `ProcesoParteService` (`listByProceso`, `listByCliente`, 
 
 **Pendiente conocido (no oculto):** la integridad referencial sigue sin ser general — hoy solo se garantiza en el momento de *crear* (no se puede crear un Proceso apuntando a una institución/materia/estado inexistente, ni una parte apuntando a un cliente/persona/proceso inexistente). Todavía no existe una verificación que impida, por ejemplo, dejar un Proceso sin ninguna parte principal *después* de haberlo creado (si alguien borra lógicamente todas sus partes una por una). Se documenta para abordar junto con `ReferentialIntegrityService` en una iteración futura.
 
+---
+
+## Ajuste de UX — Saludo dinámico en el encabezado
+
+**Decisión 11 — El saludo pasa a depender del perfil del usuario y de la hora del sistema, como parte de la personalización de la experiencia de uso.**
+El encabezado ahora muestra un saludo dinámico (`I18N.construirSaludoCompleto()`), calculado según la hora del dispositivo (mañana/tarde/noche) y el nombre + título profesional del usuario, si están configurados. El texto ya no vive escrito a mano en `app.js`, sino en un diccionario centralizado (`i18n.js`), preparado para agregar otros idiomas en el futuro sin buscar y reemplazar cadenas sueltas por toda la aplicación.
+
+**Decisión 12 — El perfil del usuario vive en `localStorage`, no en `IndexedDB`.**
+Nombre, apellido y título profesional (Abg., Dra., etc.) son una preferencia de configuración del dispositivo, no un dato de negocio del estudio — no se lista, no se relaciona con Procesos, no necesita índices ni `StorageService`. Esto respeta la regla ya establecida del proyecto: `localStorage` queda para preferencias/configuración, `IndexedDB` para datos de negocio.
+
+**Aclaración de alcance importante:** todavía no existe una pantalla de Configuración donde cargar este perfil — es la razón por la que, hasta que se construya (módulo Configuración, ya en el roadmap), el saludo va a mostrarse sin nombre (solo "Buenos días"/"Buenas tardes"/"Buenas noches"), degradando con elegancia en vez de mostrar un dato inventado o un espacio vacío.
+
+**Pedido de identidad de marca (isotipo de LexFlow, doble nivel de marca, ícono de PWA/Play Store/notificaciones/PDF/sitio web) recibido y NO implementado en esta iteración** — es una decisión de diseño de marca grande, no un ajuste de UX chico, y merece su propia conversación de diseño antes de tocar código (ver respuesta de Claude en el chat).
+
+---
+
+## Arquitectura 0.9 (cierre) — Capacidad transaccional generalizada
+
+**Decisión 13 — División del proyecto en dos responsabilidades: Claude A (arquitectura/backend) y Claude B (diseño/UX), a partir de esta iteración.**
+Este documento (`DECISION-LOG.md`), junto con `ARCHITECTURE.md` y `MIGRACIONES.md`, queda bajo responsabilidad de Claude A. El diseño visual y la experiencia de usuario se documentan aparte, en `DESIGN-ROADMAP.md` (Claude B).
+
+**Decisión 14 — `putMultiple()` tenía una limitación real: solo soportaba `put`, no `delete`.**
+Auditoría solicitada por el Director: se confirmó que la arquitectura sí soporta transacciones reales multi-store (no es una limitación falsa), pero de forma incompleta — no se podían combinar creación/actualización con eliminación en una misma operación atómica. Se resolvió de forma permanente y genérica, no con un parche puntual para Proceso:
+- `runTransaction(storeNames, modo, funcionDeTrabajo)`: primitiva de bajo nivel, entrega la transacción cruda de IndexedDB. Base de todo lo demás.
+- `writeMany(operaciones)`: nueva, admite mezclar `put` y `remove` atómicamente. Para cualquier servicio futuro, no solo Proceso.
+- `putMultiple()` se mantiene con la misma firma y comportamiento (compatibilidad total con `ProcesoService.createProcesoCompleto()`, que no necesitó ningún cambio), reimplementada por dentro sobre `runTransaction()`.
+
+**Impacto en módulos existentes:** ninguno. `ProcesoService` y `ProcesoParteService` no se modificaron — siguen llamando a `putMultiple()` exactamente igual que antes.
+
+**MIGRACIONES.md no se tocó** — no hubo cambio de esquema de IndexedDB (ni stores ni índices nuevos), solo de la capa de acceso a datos.
+
+
+

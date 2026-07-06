@@ -201,36 +201,80 @@ var StorageService = (function () {
   // falla, la transacción entera se revierte sola — comportamiento nativo
   // de IndexedDB, no hay que implementar el rollback a mano).
   // operations: [{ store: "procesos", record: {...} }, { store: "proceso_partes", record: {...} }, ...]
-  function putMultiple(operations) {
-    var storeNames = operations
-      .map(function (op) { return op.store; })
-      .filter(function (name, i, arr) { return arr.indexOf(name) === i; });
-
+  // ------------------------------------------------------------
+  // runTransaction — primitiva genérica de bajo nivel. Abre UNA
+  // transacción real de IndexedDB sobre los stores indicados y le
+  // entrega el objeto de transacción a "funcionDeTrabajo", para que
+  // emita las operaciones que necesite (put, delete, get, cualquier
+  // combinación). Ningún servicio de dominio debe usar indexedDB
+  // directo: en cambio, puede pedirle a StorageService una
+  // transacción cruda a través de esta función cuando putMultiple/
+  // writeMany no alcancen para su caso de uso.
+  //
+  // Regla de uso importante (limitación real de IndexedDB, no de
+  // este código): "funcionDeTrabajo" debe emitir todas sus
+  // operaciones de forma síncrona, sin await/microtasks intermedios
+  // ajenos a la transacción — si se espera algo async a mitad de
+  // camino (ej. otra consulta a la red), IndexedDB puede cerrar la
+  // transacción sola antes de tiempo. Por eso todas las validaciones
+  // y lecturas asíncronas deben resolverse ANTES de abrir la
+  // transacción (así lo hace ya createProcesoCompleto).
+  // ------------------------------------------------------------
+  function runTransaction(storeNames, modo, funcionDeTrabajo) {
     return openDB().then(function (db) {
       return new Promise(function (resolve, reject) {
-        var tx = db.transaction(storeNames, "readwrite");
+        var tx = db.transaction(storeNames, modo);
         var settled = false;
+        var resultado;
 
-        tx.oncomplete = function () {
-          if (!settled) { settled = true; resolve(operations.map(function (op) { return op.record; })); }
-        };
-        tx.onerror = function () {
-          if (!settled) { settled = true; reject(tx.error); }
-        };
-        tx.onabort = function () {
-          if (!settled) { settled = true; reject(tx.error || new Error("La transacción se revirtió por completo (putMultiple).")); }
-        };
+        tx.oncomplete = function () { if (!settled) { settled = true; resolve(resultado); } };
+        tx.onerror = function () { if (!settled) { settled = true; reject(tx.error); } };
+        tx.onabort = function () { if (!settled) { settled = true; reject(tx.error || new Error("La transacción se revirtió por completo.")); } };
 
         try {
-          operations.forEach(function (op) {
-            tx.objectStore(op.store).put(op.record);
-          });
+          resultado = funcionDeTrabajo(tx);
         } catch (err) {
           settled = true;
           reject(err);
           try { tx.abort(); } catch (e) {}
         }
       });
+    });
+  }
+
+  // putMultiple — se mantiene por compatibilidad (ProcesoService ya la usa
+  // tal cual). Ahora es un caso particular de runTransaction: solo "put".
+  function putMultiple(operations) {
+    var storeNames = operations
+      .map(function (op) { return op.store; })
+      .filter(function (name, i, arr) { return arr.indexOf(name) === i; });
+
+    return runTransaction(storeNames, "readwrite", function (tx) {
+      operations.forEach(function (op) {
+        tx.objectStore(op.store).put(op.record);
+      });
+      return operations.map(function (op) { return op.record; });
+    });
+  }
+
+  // writeMany — versión general: mezcla "put" y "remove" en una sola
+  // transacción atómica. operations: [{ type: "put", store, record }] o
+  // [{ type: "remove", store, id }], en cualquier combinación y orden.
+  function writeMany(operations) {
+    var storeNames = operations
+      .map(function (op) { return op.store; })
+      .filter(function (name, i, arr) { return arr.indexOf(name) === i; });
+
+    return runTransaction(storeNames, "readwrite", function (tx) {
+      operations.forEach(function (op) {
+        var store = tx.objectStore(op.store);
+        if (op.type === "remove") {
+          store.delete(op.id);
+        } else {
+          store.put(op.record);
+        }
+      });
+      return true;
     });
   }
 
@@ -355,6 +399,8 @@ var StorageService = (function () {
     count: count,
     put: put,
     putMultiple: putMultiple,
+    writeMany: writeMany,
+    runTransaction: runTransaction,
     remove: remove,
     generateId: generateId,
     runTransaction: runTransaction,

@@ -1,10 +1,12 @@
-const CACHE_NAME = "gamon-agenda-cache-v10";
+const CACHE_NAME = "gamon-agenda-cache-v12";
 
 const APP_SHELL = [
   "./",
   "./index.html",
   "./app.js",
   "./storage-service.js",
+  "./i18n.js",
+  "./perfil-usuario-service.js",
   "./validation-service.js",
   "./institution-service.js",
   "./persona-service.js",
