@@ -44,41 +44,49 @@ var PersonaService = (function () {
   }
 
   function create(data) {
-    var validacion = ValidationService.validarPersona(data);
-    if (!validacion.valido) return Promise.reject({ validacion: validacion });
+    return ValidationService.validarPersona(data).then(function (validacion) {
+      if (!validacion.valido) return Promise.reject({ validacion: validacion });
 
-    var now = new Date().toISOString();
-    var record = {
-      id: StorageService.generateId(),
-      nombre: data.nombre.trim(),
-      apellido: data.apellido || "",
-      telefono: data.telefono || "",
-      correo: data.correo || "",
-      matriculaProfesional: data.matriculaProfesional || "",
-      institucionId: data.institucionId || null,
-      observaciones: data.observaciones || "",
-      eliminadoLogico: false,
-      createdAt: now,
-      updatedAt: now,
-    };
-    return StorageService.put(STORE, record);
+      var now = new Date().toISOString();
+      var record = {
+        id: StorageService.generateId(),
+        nombre: data.nombre.trim(),
+        apellido: data.apellido || "",
+        telefono: data.telefono || "",
+        correo: data.correo || "",
+        matriculaProfesional: data.matriculaProfesional || "",
+        institucionId: data.institucionId || null,
+        observaciones: data.observaciones || "",
+        eliminadoLogico: false,
+        createdAt: now,
+        updatedAt: now,
+      };
+      return StorageService.put(STORE, record);
+    });
   }
 
   function update(id, cambios) {
     return getById(id).then(function (actual) {
       if (!actual) return Promise.reject({ error: "No existe la persona con id " + id });
       var propuesto = Object.assign({}, actual, cambios);
-      var validacion = ValidationService.validarPersona(propuesto);
-      if (!validacion.valido) return Promise.reject({ validacion: validacion });
-      propuesto.updatedAt = new Date().toISOString();
-      return StorageService.put(STORE, propuesto);
+      return ValidationService.validarPersona(propuesto).then(function (validacion) {
+        if (!validacion.valido) return Promise.reject({ validacion: validacion });
+        propuesto.updatedAt = new Date().toISOString();
+        return StorageService.put(STORE, propuesto);
+      });
     });
   }
 
-  // Eliminación lógica únicamente — ver misma nota que InstitutionService
-  // respecto a integridad referencial pendiente para una iteración futura.
+  // Eliminación lógica únicamente. A partir de la Arquitectura 1.0, se
+  // confirma con ReferentialIntegrityService que ninguna ProcesoParte activa
+  // siga referenciando esta persona antes de permitir la eliminación.
   function softDelete(id) {
-    return update(id, { eliminadoLogico: true });
+    return ReferentialIntegrityService.puedeEliminarse(STORE, id).then(function (resultado) {
+      if (!resultado.puedeEliminarse) {
+        return Promise.reject({ validacion: { valido: false, errores: resultado.motivos } });
+      }
+      return update(id, { eliminadoLogico: true });
+    });
   }
 
   return {

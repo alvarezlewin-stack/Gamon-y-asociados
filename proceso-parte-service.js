@@ -102,8 +102,18 @@ var ProcesoParteService = (function () {
   // (impedir dejar un Proceso sin ninguna parte principal al borrar la
   // última) queda documentada como pendiente en DECISION-LOG.md — la
   // única garantía activa hoy es al CREAR el proceso (ver ProcesoService).
+  // Eliminación lógica únicamente. A partir de la Arquitectura 1.0, pasa por
+  // ReferentialIntegrityService igual que el resto de los servicios — hoy
+  // ninguna entidad referencia a "proceso_partes" desde afuera, pero queda
+  // preparado para cuando exista (ej. Documentos vinculados a una parte
+  // específica en vez de al proceso completo).
   function softDelete(id) {
-    return update(id, { eliminadoLogico: true });
+    return ReferentialIntegrityService.puedeEliminarse(STORE, id).then(function (resultado) {
+      if (!resultado.puedeEliminarse) {
+        return Promise.reject({ validacion: { valido: false, errores: resultado.motivos } });
+      }
+      return update(id, { eliminadoLogico: true });
+    });
   }
 
   return {

@@ -134,8 +134,20 @@ var ProcesoService = (function () {
   // (quedan históricamente vinculadas a un proceso inactivo — no se
   // implementa todavía la verificación general de integridad referencial,
   // documentado en DECISION-LOG.md).
+  // Eliminación lógica únicamente. No borra las ProcesoParte asociadas (le
+  // pertenecen — ver Decisión sobre "bloqueaEliminacion: false" en
+  // ReferentialIntegrityService). A partir de la Arquitectura 1.0, se
+  // confirma con ReferentialIntegrityService que ninguna otra entidad externa
+  // (no compositiva) dependa de este proceso antes de desactivarlo — hoy
+  // ninguna regla externa aplica todavía, pero queda preparado para cuando
+  // existan Documentos/Actuaciones vinculadas.
   function softDelete(id) {
-    return update(id, { eliminadoLogico: true });
+    return ReferentialIntegrityService.puedeEliminarse(STORE, id).then(function (resultado) {
+      if (!resultado.puedeEliminarse) {
+        return Promise.reject({ validacion: { valido: false, errores: resultado.motivos } });
+      }
+      return update(id, { eliminadoLogico: true });
+    });
   }
 
   return {

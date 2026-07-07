@@ -28,40 +28,47 @@ var InstitutionService = (function () {
   }
 
   function create(data) {
-    var validacion = ValidationService.validarInstitucion(data);
-    if (!validacion.valido) return Promise.reject({ validacion: validacion });
+    return ValidationService.validarInstitucion(data).then(function (validacion) {
+      if (!validacion.valido) return Promise.reject({ validacion: validacion });
 
-    var now = new Date().toISOString();
-    var record = {
-      id: StorageService.generateId(),
-      nombre: data.nombre.trim(),
-      tipoInstitucionId: data.tipoInstitucionId,
-      ciudad: data.ciudad || "",
-      direccion: data.direccion || "",
-      eliminadoLogico: false,
-      createdAt: now,
-      updatedAt: now,
-    };
-    return StorageService.put(STORE, record);
+      var now = new Date().toISOString();
+      var record = {
+        id: StorageService.generateId(),
+        nombre: data.nombre.trim(),
+        tipoInstitucionId: data.tipoInstitucionId,
+        ciudad: data.ciudad || "",
+        direccion: data.direccion || "",
+        eliminadoLogico: false,
+        createdAt: now,
+        updatedAt: now,
+      };
+      return StorageService.put(STORE, record);
+    });
   }
 
   function update(id, cambios) {
     return getById(id).then(function (actual) {
       if (!actual) return Promise.reject({ error: "No existe la institución con id " + id });
       var propuesto = Object.assign({}, actual, cambios);
-      var validacion = ValidationService.validarInstitucion(propuesto);
-      if (!validacion.valido) return Promise.reject({ validacion: validacion });
-      propuesto.updatedAt = new Date().toISOString();
-      return StorageService.put(STORE, propuesto);
+      return ValidationService.validarInstitucion(propuesto).then(function (validacion) {
+        if (!validacion.valido) return Promise.reject({ validacion: validacion });
+        propuesto.updatedAt = new Date().toISOString();
+        return StorageService.put(STORE, propuesto);
+      });
     });
   }
 
   // Eliminación lógica únicamente — nunca se borra físicamente (regla del proyecto).
-  // Antes de marcar como eliminada, en una iteración futura, ReferentialIntegrityService
-  // deberá confirmar que ninguna Persona ni Proceso siga referenciando esta institución
-  // (ver DECISION-LOG.md). Por ahora, esta función NO hace ese chequeo todavía.
+  // A partir de la Arquitectura 1.0, se confirma con ReferentialIntegrityService
+  // que ninguna Persona ni Proceso activo siga referenciando esta institución
+  // antes de permitir la eliminación.
   function softDelete(id) {
-    return update(id, { eliminadoLogico: true });
+    return ReferentialIntegrityService.puedeEliminarse(STORE, id).then(function (resultado) {
+      if (!resultado.puedeEliminarse) {
+        return Promise.reject({ validacion: { valido: false, errores: resultado.motivos } });
+      }
+      return update(id, { eliminadoLogico: true });
+    });
   }
 
   return {

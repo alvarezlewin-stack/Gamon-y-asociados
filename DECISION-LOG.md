@@ -47,6 +47,32 @@ Todas las consultas de `ProcesoParteService` (`listByProceso`, `listByCliente`, 
 
 **Pendiente conocido (no oculto):** la integridad referencial sigue sin ser general — hoy solo se garantiza en el momento de *crear* (no se puede crear un Proceso apuntando a una institución/materia/estado inexistente, ni una parte apuntando a un cliente/persona/proceso inexistente). Todavía no existe una verificación que impida, por ejemplo, dejar un Proceso sin ninguna parte principal *después* de haberlo creado (si alguien borra lógicamente todas sus partes una por una). Se documenta para abordar junto con `ReferentialIntegrityService` en una iteración futura.
 
+**[ACTUALIZACIÓN — Arquitectura 1.0: este pendiente quedó resuelto para el caso de eliminación de instituciones/personas/catálogos en uso. Sigue abierto el caso específico de "proceso sin ninguna parte principal después de creado" — ver Decisión 18.]**
+
+---
+
+## Arquitectura 1.0 — ReferentialIntegrityService
+
+**Decisión 15 — Motor genérico basado en registro declarativo, no si/entonces por entidad.**
+`ReferentialIntegrityService` no conoce "Proceso", "Persona" ni "Institución" como conceptos — solo conoce una lista de reglas `{ storeOrigen, campo, storeDestino, opcional, bloqueaEliminacion }`. Las dos capacidades pedidas (validar antes de guardar, impedir borrar en uso) se derivan de la misma lista. Un módulo futuro solo necesita `registrarRegla(...)`, nunca modificar el motor.
+
+**Decisión 16 — Dos índices que hubiesen sido necesarios (`procesos.delitoId`, `procesos.tipoProcesoId`) no se agregaron.**
+Para la búsqueda inversa "¿qué procesos usan este delito/tipo?", lo ideal sería un índice secundario. Se decidió NO agregarlo ahora (evita tocar `MIGRACIONES.md` sin necesidad real): son consultas raras (dar de baja un valor de catálogo), no un camino caliente del sistema. El motor cae a recorrer la tabla completa en JavaScript para esos dos casos puntuales — documentado como decisión consciente, no como deuda oculta. Si en el futuro esas consultas se vuelven frecuentes, agregar el índice es un cambio aislado y de bajo riesgo.
+
+**Decisión 17 — Problema estructural detectado y resuelto: no toda relación debe bloquear el borrado.**
+Aplicar el motor genérico sin distinción hubiese impedido desactivar CUALQUIER Proceso (porque siempre tiene sus `ProcesoParte` activas apuntándolo). Se identificó la diferencia entre relación de **composición** (`ProcesoParte` le pertenece a `Proceso`, no lo "usa" desde afuera) y relación de **referencia externa** (`Proceso` usa una `Institución`). Se agregó el flag `bloqueaEliminacion` (default `true`) a cada regla; la única relación marcada en `false` hoy es `proceso_partes → procesos`.
+
+**Decisión 18 — Pregunta de negocio abierta, no resuelta técnicamente todavía.**
+Como `ProcesoService.softDelete()` no cascada a sus `ProcesoParte`, una Persona/Cliente que participó en un proceso ya cerrado sigue "bloqueando" su propia eliminación para siempre (la parte sigue activa aunque el proceso esté inactivo). ¿Es correcto, o cerrar un proceso debería liberar a sus partes? Se deja registrado para decidir con criterio de negocio, no solo de arquitectura.
+
+**Decisión 19 — `ValidationService` refactorizado: elimina duplicación real encontrada.**
+`validarProceso`/`validarProcesoParte` tenían sus propias consultas de existencia (`StorageService.exists(...)`) escritas a mano, duplicando lo que ahora hace `ReferentialIntegrityService`. Se eliminó la duplicación: `ValidationService` se queda con reglas de forma/negocio (campos obligatorios, fechas, exclusividad cliente/persona) y delega toda verificación de referencias al motor centralizado. De paso, se cerró un hueco que existía desde la Arquitectura 0.8: `validarInstitucion`/`validarPersona` nunca habían verificado que `tipoInstitucionId`/`institucionId` existieran de verdad (solo que el campo viniera lleno) — ahora sí, con el mismo motor. Esto las convirtió de síncronas a asíncronas (como ya lo eran `validarProceso`/`validarProcesoParte` desde la Arquitectura 0.9); se actualizaron `InstitutionService` y `PersonaService` en consecuencia, sin cambios de comportamiento para quien las use desde afuera.
+
+**Impacto en módulos existentes:** `softDelete()` de `InstitutionService`, `PersonaService`, `ProcesoService` y `ProcesoParteService` ahora consultan `puedeEliminarse()` antes de marcar como eliminado. Comportamiento nuevo (antes no bloqueaban nunca), pero es exactamente la funcionalidad pedida — no una regresión.
+
+**MIGRACIONES.md no se modificó** — no hubo cambio de esquema (ni stores ni índices nuevos); se decidió explícitamente no agregar los 2 índices mencionados en la Decisión 16.
+
+
 ---
 
 ## Ajuste de UX — Saludo dinámico en el encabezado
