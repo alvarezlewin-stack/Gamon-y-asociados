@@ -74,3 +74,20 @@ Este documento registra **todas** las versiones del esquema de la base de datos 
 1. Abrir la app con datos reales ya cargados (clientes/eventos/notas existentes).
 2. Confirmar que siguen apareciendo igual que antes.
 3. Con la computadora conectada por USB (`chrome://inspect` → Application → IndexedDB → `gamon-agenda-db`), confirmar que aparecen los 11 stores nuevos, todos con sus índices, y los catálogos con los registros mínimos de siembra.
+
+---
+
+## Versión 3 — Store `actuaciones`
+
+**Fecha:** iteración de `ActuacionService` (prerequisito de backend para el futuro Docket Rail/timeline de Claude B).
+
+**Cambio:** se agrega el store `actuaciones` (ausente desde la Arquitectura 0.7 a propósito, para mantener esa iteración chica).
+
+| Store | keyPath | Índices | Justificación del índice |
+|---|---|---|---|
+| `actuaciones` | `id` | `procesoId` | Consulta más frecuente: el timeline completo de un proceso (`ActuacionService.listByProceso`) |
+
+**Compatibilidad:** total. Ningún store existente se modifica. `onupgradeneeded` crea el store nuevo únicamente si no existe.
+
+**Estrategia de rollback:** revertir `storage-service.js` a la versión anterior; el store nuevo queda vacío hasta entonces, sin pérdida de datos de negocio real.
+

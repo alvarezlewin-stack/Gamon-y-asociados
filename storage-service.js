@@ -8,7 +8,7 @@
 // ============================================================
 var StorageService = (function () {
   var DB_NAME = "gamon-agenda-db";
-  var DB_VERSION = 2; // v1: clients/events/notes. v2: infraestructura del módulo Procesos (ver MIGRACIONES.md)
+  var DB_VERSION = 3; // v1: clients/events/notes. v2: infraestructura Procesos. v3: actuaciones (ver MIGRACIONES.md)
   var LEGACY_LOCALSTORAGE_KEY = "gamon-agenda-data-v1";
   var MIGRATION_FLAG_KEY = "gamon-agenda-migrated-v1";
   var SEED_FLAG_KEY = "gamon-agenda-seed-v2";
@@ -65,7 +65,14 @@ var StorageService = (function () {
     { name: "tipos_actuacion", indexes: [ { name: "codigo", keyPath: "codigo" }, { name: "activo", keyPath: "activo" } ] },
     { name: "tipos_documento", indexes: [ { name: "codigo", keyPath: "codigo" }, { name: "activo", keyPath: "activo" } ] },
     { name: "tipos_institucion", indexes: [ { name: "codigo", keyPath: "codigo" }, { name: "activo", keyPath: "activo" } ] },
-    { name: "delitos", indexes: [ { name: "codigo", keyPath: "codigo" }, { name: "activo", keyPath: "activo" } ] }
+    { name: "delitos", indexes: [ { name: "codigo", keyPath: "codigo" }, { name: "activo", keyPath: "activo" } ] },
+
+    // Cada movimiento del expediente (audiencias, presentaciones, cambios de
+    // estado, etc.). El índice procesoId es indispensable: es la consulta
+    // más frecuente de todas (mostrar el timeline/Docket Rail de un proceso).
+    { name: "actuaciones", indexes: [
+      { name: "procesoId", keyPath: "procesoId" }
+    ]}
   ];
 
   var dbPromise = null;

@@ -106,3 +106,15 @@ Auditoría solicitada por el Director: se confirmó que la arquitectura sí sopo
 
 
 
+
+---
+
+## Avance mientras Claude B no estaba disponible — Paleta reconciliada + ActuacionService
+
+**Decisión 20 — Reconciliación de paleta (Design System v1.0).**
+Se reemplazaron los 6 tokens de color en `app.js`, `manifest.json` e `index.html` por los valores aprobados en `DESIGN-ROADMAP.md` (ver `IMPLEMENTATION-HANDOFF.md`, punto 1). Cambio de forma, cero cambio de comportamiento. **Pendiente (🟩 futuro, cosmético):** los archivos PNG de los íconos siguen con el negro anterior (`#0B0B0A`) horneado en los píxeles — la diferencia con `#0A0C0F` es prácticamente imperceptible; se regenera junto con cualquier otro ajuste de íconos futuro, no amerita una iteración aparte.
+
+**Decisión 21 — `ActuacionService` implementado, cierra la brecha señalada en `IMPLEMENTATION-HANDOFF.md`.**
+Se agregó el store `actuaciones` (`MIGRACIONES.md` v3, único índice: `procesoId`), reglas de integridad referencial (`actuaciones → procesos` como composición, igual criterio que `proceso_partes`; `actuaciones → tipos_actuacion` como referencia externa), `validarActuacion` en `ValidationService`, y el servicio siguiendo el mismo patrón que los otros 4. `listByProceso` ya devuelve las actuaciones ordenadas cronológicamente — es la fuente de datos real que el futuro Docket Rail necesita.
+
+**Contexto:** ambos avances se hicieron sin necesitar nada nuevo de Claude B — toda la información de diseño ya estaba disponible en `DESIGN-ROADMAP.md` y la biblioteca de componentes.

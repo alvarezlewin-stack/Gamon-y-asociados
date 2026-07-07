@@ -116,6 +116,27 @@ var LexFlowSmokeTest = (function () {
         if (!procesoBorrado || procesoBorrado.eliminadoLogico !== true) {
           throw new Error("La eliminación lógica del Proceso no funcionó como se esperaba.");
         }
+        return true;
+      })
+      .then(function () {
+        // --- Nuevo: ActuacionService, fuente de datos del futuro timeline ---
+        return StorageService.getAll("tipos_actuacion").then(function (tipos) {
+          if (!tipos.length) throw new Error("Falta el catálogo mínimo tipos_actuacion.");
+          return ActuacionService.create({
+            procesoId: ctx.proceso.id,
+            tipoActuacionId: tipos[0].id,
+            fecha: new Date().toISOString().slice(0, 10),
+            descripcion: "Actuación de prueba (SmokeTest)",
+          });
+        });
+      })
+      .then(function (actuacion) {
+        console.log("[SmokeTest] Actuación creada:", actuacion);
+        return ActuacionService.listByProceso(ctx.proceso.id);
+      })
+      .then(function (actuaciones) {
+        console.log("[SmokeTest] Actuaciones del proceso:", actuaciones);
+        if (actuaciones.length !== 1) throw new Error("Se esperaba 1 actuación, se encontraron " + actuaciones.length);
         console.log("%c[SmokeTest] TODO OK ✅", "color: green; font-weight: bold;");
         return true;
       })

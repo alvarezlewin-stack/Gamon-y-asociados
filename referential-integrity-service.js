@@ -31,6 +31,11 @@ var ReferentialIntegrityService = (function () {
     { storeOrigen: "personas", campo: "institucionId", storeDestino: "instituciones", opcional: true },
     { storeOrigen: "instituciones", campo: "tipoInstitucionId", storeDestino: "tipos_institucion" },
     { storeOrigen: "tipos_proceso", campo: "materiaId", storeDestino: "materias" },
+
+    // Composición: una Actuación le pertenece a su Proceso, no lo "usa" desde
+    // afuera — igual criterio que proceso_partes (Decisión 17).
+    { storeOrigen: "actuaciones", campo: "procesoId", storeDestino: "procesos", bloqueaEliminacion: false },
+    { storeOrigen: "actuaciones", campo: "tipoActuacionId", storeDestino: "tipos_actuacion" },
   ];
 
   // Stores que tienen índice secundario sobre el campo indicado (ver
@@ -49,6 +54,7 @@ var ReferentialIntegrityService = (function () {
     "personas.institucionId": true,
     "instituciones.tipoInstitucionId": true,
     "tipos_proceso.materiaId": true,
+    "actuaciones.procesoId": true,
   };
 
   function registrarRegla(regla) {

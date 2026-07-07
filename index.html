@@ -17,9 +17,9 @@
         var root = document.getElementById("root");
         if (root && root.children.length === 0) {
           root.innerHTML =
-            '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;font-family:sans-serif;color:#F3EDD9;background:#0B0B0A;">' +
+            '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;font-family:sans-serif;color:#ECEDEF;background:#0A0C0F;">' +
             '<p style="font-size:16px;margin-bottom:8px;">No se pudo cargar la aplicación.</p>' +
-            '<p style="font-size:13px;color:#F3EDD9AA;">Revisá tu conexión a internet y volvé a intentar. Si el problema sigue, avisá al soporte técnico.</p>' +
+            '<p style="font-size:13px;color:#ECEDEFAA;">Revisá tu conexión a internet y volvé a intentar. Si el problema sigue, avisá al soporte técnico.</p>' +
             "</div>";
         }
       }, 4000);
@@ -28,7 +28,7 @@
 
   <!-- PWA -->
   <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#0B0B0A" />
+  <meta name="theme-color" content="#0A0C0F" />
   <link rel="icon" href="favicon.png" />
   <link rel="apple-touch-icon" href="icon-192.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -48,7 +48,7 @@
 
   <style>
     html, body, #root { height: 100%; }
-    body { margin: 0; background: #0B0B0A; -webkit-tap-highlight-color: transparent; }
+    body { margin: 0; background: #0A0C0F; -webkit-tap-highlight-color: transparent; }
     * { -webkit-user-select: none; user-select: none; }
     input, textarea { user-select: text; -webkit-user-select: text; }
     ::-webkit-scrollbar { display: none; }
@@ -66,6 +66,7 @@
   <script src="persona-service.js"></script>
   <script src="proceso-parte-service.js"></script>
   <script src="proceso-service.js"></script>
+  <script src="actuacion-service.js"></script>
   <script src="smoke-test.js"></script>
   <script src="app.js"></script>
 

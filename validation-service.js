@@ -105,10 +105,22 @@ var ValidationService = (function () {
     });
   }
 
+  function validarActuacion(data, opciones) {
+    var errores = [];
+    if (!data || !data.procesoId) errores.push("Debe indicarse a qué proceso pertenece esta actuación.");
+    if (!data || !data.tipoActuacionId) errores.push("Debe indicarse el tipo de actuación.");
+    if (!data || !data.fecha) errores.push("Debe indicarse la fecha de la actuación.");
+
+    return ReferentialIntegrityService.validarReferencias("actuaciones", data, opciones).then(function (refs) {
+      return { valido: errores.length === 0 && refs.valido, errores: errores.concat(refs.errores) };
+    });
+  }
+
   return {
     validarInstitucion: validarInstitucion,
     validarPersona: validarPersona,
     validarProceso: validarProceso,
     validarProcesoParte: validarProcesoParte,
+    validarActuacion: validarActuacion,
   };
 })();
