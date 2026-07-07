@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LexFlow — Biblioteca de Componentes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Public+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0C0F; --card:#14171D;
+    --hairline:#262B33; --hairline-soft:#1D2127;
+    --text:#ECEDEF; --text-dim:#8B929E; --text-faint:#5B616B;
+    --gold:#C9A24B; --gold-bright:#E4C878; --gold-dim:rgba(201,162,75,0.12);
+    --danger:#C9564B; --danger-dim:rgba(201,86,75,0.12);
+    --success:#4C9A6A; --success-dim:rgba(76,154,106,0.12);
+    --info:#4C7FC9; --info-dim:rgba(76,127,201,0.12);
+    --purple:#9B7FC9; --purple-dim:rgba(155,127,201,0.14);
+    --radius:10px; --radius-lg:16px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{ background:var(--bg); color:var(--text); font-family:'Public Sans',sans-serif; line-height:1.5; -webkit-font-smoothing:antialiased; }
+  .serif{ font-family:'Fraunces',serif; }
+  .mono{ font-family:'IBM Plex Mono',monospace; }
+  .eyebrow{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--text-faint); }
+  a{ color:inherit; text-decoration:none; }
+
+  .app{ display:grid; grid-template-columns:240px 1fr; min-height:100vh; }
+  @media (max-width:920px){ .app{ grid-template-columns:1fr; } .toc{ display:none; } }
+  .toc{ border-right:1px solid var(--hairline-soft); padding:24px 16px; position:sticky; top:0; height:100vh; overflow-y:auto; }
+  .toc .lf{ font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:.2em; color:var(--gold-bright); margin-bottom:18px; display:block; }
+  .toc a{ display:block; font-size:12px; color:var(--text-dim); padding:5px 8px; border-radius:6px; }
+  .toc a:hover{ color:var(--text); background:var(--hairline-soft); }
+
+  main{ padding:32px 40px 100px; max-width:980px; }
+  @media (max-width:920px){ main{ padding:20px 18px 80px; } }
+
+  .page-head{ margin-bottom:36px; }
+  .page-head h1{ font-size:28px; font-weight:500; margin-bottom:8px; }
+  .page-head p{ color:var(--text-dim); font-size:13.5px; max-width:560px; }
+
+  section{ margin-bottom:56px; padding-top:8px; }
+  .sec-head{ display:flex; align-items:baseline; gap:10px; margin-bottom:16px; border-bottom:1px solid var(--hairline-soft); padding-bottom:12px; }
+  .sec-head .num{ font-family:'IBM Plex Mono',monospace; color:var(--gold); font-size:13px; }
+  .sec-head h2{ font-size:19px; font-weight:600; }
+
+  .spec{ display:grid; grid-template-columns:120px 1fr; gap:6px 14px; font-size:12.5px; margin-bottom:18px; background:var(--card); border:1px solid var(--hairline-soft); border-radius:var(--radius); padding:14px 16px; }
+  .spec .k{ color:var(--text-faint); font-family:'IBM Plex Mono',monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; padding-top:1px; }
+  .spec .v{ color:var(--text-dim); }
+
+  .demo{ border:1px solid var(--hairline-soft); border-radius:var(--radius-lg); padding:20px; display:flex; flex-wrap:wrap; gap:12px; align-items:center; background:#0D0F13; }
+  .demo.col{ flex-direction:column; align-items:stretch; }
+
+  /* ===== BOTONES ===== */
+  .btn{ font-family:'Public Sans',sans-serif; font-weight:600; border-radius:8px; cursor:pointer; border:1px solid transparent; }
+  .btn-md{ font-size:13px; padding:10px 18px; }
+  .btn-sm{ font-size:11.5px; padding:6px 12px; }
+  .btn-primary{ background:var(--gold); color:#14171D; }
+  .btn-secondary{ background:transparent; border-color:var(--hairline); color:var(--text); }
+  .btn-ghost{ background:transparent; color:var(--gold); }
+  .btn-danger{ background:transparent; border-color:var(--danger); color:var(--danger); }
+  .btn-disabled{ background:var(--hairline-soft); color:var(--text-faint); cursor:not-allowed; }
+
+  /* ===== INPUTS ===== */
+  .input{ background:var(--card); border:1px solid var(--hairline-soft); border-radius:8px; padding:9px 13px; color:var(--text); font-size:13px; font-family:'Public Sans',sans-serif; }
+  .input::placeholder{ color:var(--text-faint); }
+  .input:focus{ outline:none; border-color:var(--gold); }
+  .input-error{ border-color:var(--danger); }
+  .input-label{ font-size:11.5px; color:var(--text-dim); margin-bottom:6px; display:block; }
+  .input-help{ font-size:11px; color:var(--text-faint); margin-top:5px; }
+  .input-help.error{ color:var(--danger); }
+
+  /* ===== SELECTORES ===== */
+  .select{ background:var(--card); border:1px solid var(--hairline-soft); border-radius:8px; padding:9px 13px; color:var(--text); font-size:13px; font-family:'Public Sans',sans-serif; }
+  .toggle{ display:flex; gap:2px; background:var(--card); border:1px solid var(--hairline-soft); border-radius:8px; padding:3px; }
+  .toggle button{ font-size:11.5px; font-weight:600; padding:6px 12px; border-radius:6px; border:none; background:transparent; color:var(--text-dim); cursor:pointer; }
+  .toggle button.active{ background:var(--gold-dim); color:var(--gold-bright); }
+  .checkbox{ width:16px; height:16px; border:1.5px solid var(--hairline); border-radius:4px; background:var(--card); }
+  .checkbox.checked{ background:var(--gold); border-color:var(--gold); }
+  .radio{ width:16px; height:16px; border:1.5px solid var(--hairline); border-radius:50%; background:var(--card); }
+  .radio.checked{ border-color:var(--gold); box-shadow:inset 0 0 0 3px var(--bg), inset 0 0 0 6px var(--gold); }
+
+  /* ===== TABLAS ===== */
+  table{ width:100%; border-collapse:collapse; font-size:13px; }
+  th{ text-align:left; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--text-faint); font-weight:500; padding:10px 12px; border-bottom:1px solid var(--hairline); }
+  td{ padding:12px; border-bottom:1px solid var(--hairline-soft); }
+  tr:last-child td{ border-bottom:none; }
+  tr:hover td{ background:rgba(255,255,255,0.015); }
+
+  /* ===== TARJETAS ===== */
+  .card{ border:1px solid var(--hairline-soft); background:var(--card); border-radius:var(--radius); padding:16px; min-width:160px; }
+  .card-dashed{ border-style:dashed; border-color:var(--hairline); }
+  .card h4{ font-size:13px; font-weight:600; margin-bottom:4px; }
+  .card p{ font-size:11.5px; color:var(--text-dim); }
+
+  /* ===== BADGES / TAGS / CHIPS ===== */
+  .badge{ font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:20px; letter-spacing:.02em; }
+  .tag{ font-size:10.5px; font-weight:600; padding:2px 8px; border-radius:20px; border:1px solid currentColor; }
+  .chip{ font-size:11.5px; color:var(--text-dim); border:1px solid var(--hairline-soft); border-radius:20px; padding:6px 12px; }
+  .chip.active{ border-color:var(--gold); color:var(--gold-bright); background:var(--gold-dim); }
+
+  /* ===== AVATARES ===== */
+  .avatar{ border-radius:50%; background:linear-gradient(135deg,#2b2f37,#1a1d22); border:1px solid var(--hairline); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-weight:600; color:var(--text-dim); }
+  .avatar-sm{ width:26px; height:26px; font-size:10px; }
+  .avatar-md{ width:34px; height:34px; font-size:12px; }
+  .avatar-lg{ width:48px; height:48px; font-size:15px; }
+
+  /* ===== NAV / SIDEBAR ===== */
+  .nav-mini{ display:flex; flex-direction:column; gap:2px; width:180px; }
+  .nav-item{ display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px; color:var(--text-dim); font-size:12.5px; font-weight:500; border-left:2px solid transparent; }
+  .nav-item.active{ color:var(--gold-bright); background:var(--gold-dim); border-left:2px solid var(--gold); }
+
+  /* ===== TIMELINE (docket rail) ===== */
+  .docket{ position:relative; padding-left:26px; }
+  .docket::before{ content:''; position:absolute; left:5px; top:4px; bottom:4px; width:1px; background:var(--hairline); }
+  .docket-item{ position:relative; padding-bottom:16px; }
+  .docket-item:last-child{ padding-bottom:0; }
+  .docket-item::before{ content:''; position:absolute; left:-21px; top:3px; width:9px; height:9px; border-radius:50%; background:var(--bg); border:1.5px solid var(--text-faint); }
+  .docket-item.done::before{ background:var(--success); border-color:var(--success); }
+  .docket-item.current::before{ background:var(--gold); border-color:var(--gold); box-shadow:0 0 0 3px var(--gold-dim); }
+  .docket-title{ font-size:12.5px; font-weight:600; }
+  .docket-sub{ font-size:11px; color:var(--text-dim); }
+
+  /* ===== MODAL ===== */
+  .modal-frame{ background:rgba(0,0,0,0.5); border-radius:var(--radius-lg); padding:40px 20px; display:flex; justify-content:center; }
+  .modal{ background:var(--card); border:1px solid var(--hairline); border-radius:var(--radius-lg); padding:22px; width:100%; max-width:340px; }
+  .modal h4{ font-size:15px; font-weight:600; margin-bottom:8px; }
+  .modal p{ font-size:12.5px; color:var(--text-dim); margin-bottom:18px; }
+  .modal-actions{ display:flex; justify-content:flex-end; gap:8px; }
+
+  /* ===== ALERTAS / TOASTS ===== */
+  .alert{ display:flex; gap:10px; padding:12px 14px; border-radius:var(--radius); font-size:12.5px; align-items:flex-start; }
+  .alert.danger{ background:var(--danger-dim); color:var(--danger); }
+  .alert.success{ background:var(--success-dim); color:var(--success); }
+  .alert.info{ background:var(--info-dim); color:var(--info); }
+  .toast{ background:#1C2027; border:1px solid var(--hairline); border-radius:10px; padding:12px 16px; font-size:12.5px; display:flex; align-items:center; gap:10px; box-shadow:0 8px 24px rgba(0,0,0,0.4); }
+
+  /* ===== FORMULARIOS ===== */
+  .form-row{ display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+
+  /* ===== BUSCADOR ===== */
+  .search-bar{ display:flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--hairline-soft); border-radius:8px; padding:9px 13px; }
+  .search-bar svg{ width:14px; height:14px; color:var(--text-faint); }
+  .search-bar input{ background:transparent; border:none; color:var(--text); font-size:13px; flex:1; }
+
+  /* ===== PAGINACIÓN ===== */
+  .pagination{ display:flex; gap:6px; align-items:center; }
+  .page-btn{ width:28px; height:28px; border-radius:6px; border:1px solid var(--hairline-soft); background:var(--card); color:var(--text-dim); font-size:12px; display:flex; align-items:center; justify-content:center; }
+  .page-btn.active{ border-color:var(--gold); color:var(--gold-bright); }
+
+  /* ===== CALENDARIO ===== */
+  .cal{ display:grid; grid-template-columns:repeat(7,1fr); gap:4px; width:280px; }
+  .cal .d{ aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--text-dim); border-radius:6px; }
+  .cal .d.today{ background:var(--gold-dim); color:var(--gold-bright); font-weight:700; }
+  .cal .d.event::after{ content:''; }
+  .cal .dow{ font-size:9.5px; color:var(--text-faint); text-align:center; text-transform:uppercase; }
+
+  /* ===== SKELETON ===== */
+  @keyframes pulse{ 0%,100%{ opacity:.5; } 50%{ opacity:1; } }
+  .skel{ height:12px; border-radius:4px; background:var(--hairline); animation:pulse 1.4s ease-in-out infinite; }
+
+  /* ===== EMPTY / ERROR STATES ===== */
+  .state-box{ display:flex; flex-direction:column; align-items:center; text-align:center; padding:36px 20px; border:1px dashed var(--hairline); border-radius:var(--radius); flex:1; }
+  .state-box svg{ width:32px; height:32px; color:var(--text-faint); margin-bottom:12px; }
+  .state-box.error svg{ color:var(--danger); }
+  .state-box h4{ font-size:13px; font-weight:600; margin-bottom:4px; }
+  .state-box p{ font-size:11.5px; color:var(--text-dim); }
+
+  /* ===== INDICADORES DE RIESGO / PRIORIDAD ===== */
+  .indicator{ display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:600; }
+  .indicator .dot{ width:8px; height:8px; border-radius:50%; }
+  .indicator.risk-high .dot{ background:var(--danger); } .indicator.risk-high{ color:var(--danger); }
+  .indicator.risk-med .dot{ background:var(--gold); } .indicator.risk-med{ color:var(--gold-bright); }
+  .indicator.risk-low .dot{ background:var(--success); } .indicator.risk-low{ color:var(--success); }
+
+  /* ===== IA ===== */
+  .ai-badge{ display:flex; align-items:center; gap:6px; font-size:10.5px; font-weight:700; color:var(--purple); }
+  .ai-dot{ width:6px; height:6px; border-radius:50%; background:var(--purple); box-shadow:0 0 0 3px var(--purple-dim); }
+  .ai-suggestion{ border-left:2px solid var(--purple); padding-left:10px; font-size:12.5px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="toc">
+    <span class="lf">LEXFLOW™ · UI KIT</span>
+    <a href="#botones">Botones</a>
+    <a href="#inputs">Inputs</a>
+    <a href="#selectores">Selectores</a>
+    <a href="#tablas">Tablas</a>
+    <a href="#tarjetas">Tarjetas</a>
+    <a href="#badges">Badges / Tags / Chips</a>
+    <a href="#avatares">Avatares</a>
+    <a href="#navegacion">Navegación / Sidebar</a>
+    <a href="#timeline">Timeline</a>
+    <a href="#modales">Modales</a>
+    <a href="#alertas">Alertas / Toasts</a>
+    <a href="#paneles">Paneles</a>
+    <a href="#formularios">Formularios</a>
+    <a href="#buscador">Buscador</a>
+    <a href="#filtros">Filtros</a>
+    <a href="#paginacion">Paginación</a>
+    <a href="#calendario">Calendario</a>
+    <a href="#estados">Estados (vacío/carga/error)</a>
+    <a href="#confirmaciones">Confirmaciones</a>
+    <a href="#indicadores">Indicadores de riesgo/prioridad</a>
+    <a href="#ia">Componentes de IA</a>
+    <a href="#responsive">Reglas responsive</a>
+  </nav>
+
+  <main>
+    <div class="page-head">
+      <div class="eyebrow">Design System 1.0 · Biblioteca oficial</div>
+      <h1 class="serif">Componentes de LexFlow</h1>
+      <p>Cada componente documenta propósito, variantes, comportamiento y accesibilidad. Esta biblioteca es la referencia oficial para implementación — ningún componente nuevo debe crearse fuera de este sistema sin registrarlo aquí primero.</p>
+    </div>
+
+    <!-- BOTONES -->
+    <section id="botones">
+      <div class="sec-head"><span class="num">01</span><h2>Botones</h2></div>
+      <div class="spec">
+        <div class="k">Propósito</div><div class="v">Acción principal, secundaria o destructiva del usuario.</div>
+        <div class="k">Variantes</div><div class="v">Primary (dorado, relleno), Secondary (borde), Ghost (texto dorado), Danger (borde rojo), Disabled.</div>
+        <div class="k">Tamaños</div><div class="v">md (13px/10-18px padding) para acciones principales, sm (11.5px/6-12px) dentro de tarjetas o filas.</div>
+        <div class="k">Accesibilidad</div><div class="v">Contraste mínimo 4.5:1 texto/fondo; estado disabled no debe ser el único indicador — acompañar con `aria-disabled`.</div>
+        <div class="k">Comportamiento</div><div class="v">Hover: aclara 8%. Focus: anillo dorado de 2px. Nunca usar solo color para transmitir "primario" — el relleno lo distingue por forma.</div>
+      </div>
+      <div class="demo">
+        <button class="btn btn-md btn-primary">Nueva actuación</button>
+        <button class="btn btn-md btn-secondary">Exportar</button>
+        <button class="btn btn-md btn-ghost">Ver detalles</button>
+        <button class="btn btn-md btn-danger">Eliminar</button>
+        <button class="btn btn-md btn-disabled">Deshabilitado</button>
+        <button class="btn btn-sm btn-primary">Guardar</button>
+        <button class="btn btn-sm btn-secondary">Cancelar</button>
+      </div>
+    </section>
+
+    <!-- INPUTS -->
+    <section id="inputs">
+      <div class="sec-head"><span class="num">02</span><h2>Inputs</h2></div>
+      <div class="spec">
+        <div class="k">Propósito</div><div class="v">Captura de texto libre: nombres, búsquedas, notas.</div>
+        <div class="k">Variantes</div><div class="v">Default, Focus (borde dorado), Error (borde rojo + texto de ayuda), Disabled.</div>
+        <div class="k">Espaciado</div><div class="v">Padding 9px/13px, radio 8px, misma altura que botones md para alinear en formularios.</div>
+        <div class="k">Accesibilidad</div><div class="v">Siempre con `<label>` asociado (visible, nunca solo placeholder) y mensaje de error anunciado vía `aria-describedby`.</div>
+      </div>
+      <div class="demo col">
+        <div class="form-row"><span class="input-label">Nombre del cliente</span><input class="input" placeholder="Ej. Cristian Alvarado" style="width:260px;"></div>
+        <div class="form-row"><span class="input-label">NUREJ</span><input class="input input-error" value="2023-04X6" style="width:260px;"><span class="input-help error">Formato inválido — debe ser NNNN-NNNN.</span></div>
+      </div>
+    </section>
+
+    <!-- SELECTORES -->
+    <section id="selectores">
+      <div class="sec-head"><span class="num">03</span><h2>Selectores</h2></div>
+      <div class="spec">
+        <div class="k">Propósito</div><div class="v">Elegir entre opciones: dropdown, toggle de vista, checkbox, radio.</div>
+        <div class="k">Variantes</div><div class="v">Select nativo estilizado, Toggle de segmentos (Día/Semana/Mes), Checkbox, Radio.</div>
+        <div class="k">Comportamiento</div><div class="v">Toggle: un solo activo, cambia instantáneo sin confirmación. Checkbox/Radio: mínimo 16px de área táctil, 44px con padding en mobile.</div>
+      </div>
+      <div class="demo">
+        <select class="select"><option>Civil</option><option>Laboral</option></select>
+        <div class="toggle"><button class="active">Día</button><button>Semana</button><button>Mes</button></div>
+        <div class="checkbox checked"></div>
+        <div class="checkbox"></div>
+        <div class="radio checked"></div>
+        <div class="radio"></div>
+      </div>
+    </section>
+
+    <!-- TABLAS -->
+    <section id="tablas">
+      <div class="sec-head"><span class="num">04</span><h2>Tablas</h2></div>
+      <div class="spec">
+        <div class="k">Propósito</div><div class="v">Listar registros estructurados (procesos, documentos, clientes) con múltiples columnas.</div>
+        <div class="k">Comportamiento</div><div class="v">Fila resaltada sutil al hover (2% blanco). Encabezado en mono uppercase para diferenciarlo del contenido.</div>
+        <div class="k">Responsive</div><div class="v">En mobile (&lt;700px) se reemplaza por tarjetas apiladas (ver componente Proceso), nunca scroll horizontal forzado.</div>
+      </div>
+      <div class="demo col">
+        <table>
+          <thead><tr><th>Expediente</th><th>Cliente</th><th>Materia</th><th>Estado</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">2023-0456</td><td>Cristian Alvarado</td><td><span class="tag" style="color:#7FA8D9;">Civil</span></td><td>En audiencia</td></tr>
+            <tr><td class="mono">2023-0789</td><td>María Fernández</td><td><span class="tag" style="color:#7FBF8F;">Laboral</span></td><td>Despido injustificado</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TARJETAS -->
+    <section id="tarjetas">
+      <div class="sec-head"><span class="num">05</span><h2>Tarjetas</h2></div>
+      <div class="spec">
+        <div class="k">Propósito</div><div class="v">Agrupar información relacionada: métricas, resúmenes, categorías.</div>
+        <div class="k">Variantes</div><div class="v">Sólida (borde fino + fondo `--card`), Punteada (para estados vacíos o "próximamente").</div>
+        <div class="k">Principio</div><div class="v">Nunca rellenar con color sólido saturado — el borde da la jerarquía, no el fondo.</div>
+      </div>
+      <div class="demo">
+        <div class="card"><h4>Audiencias hoy</h4><p>5 programadas</p></div>
+        <div class="card card-dashed"><h4>Litigio asistido</h4><p>Próximamente</p></div>
+      </div>
+    </section>
+
+    <!-- BADGES / TAGS / CHIPS -->
+    <section id="badges">
+      <div class="sec-head"><span class="num">06</span><h2>Badges, etiquetas y chips</h2></div>
+      <div class="spec">
+        <div class="k">Badge</div><div class="v">Relleno suave (`-dim`) + texto de color — para estado o severidad (riesgo, prioridad).</div>
+        <div class="k">Tag</div><div class="v">Solo borde, color por categoría — para materia jurídica (Civil/Laboral/Comercial/Familia).</div>
+        <div class="k">Chip</div><div class="v">Interactivo, para filtros — estado activo con borde y fondo dorado tenue.</div>
+      </div>
+      <div class="demo">
+        <span class="badge" style="background:var(--danger-dim); color:var(--danger);">Riesgo alto</span>
+        <span class="tag" style="color:#7FA8D9;">Civil</span>
+        <span class="tag" style="color:var(--gold);">Comercial</span>
+        <span class="chip active">Todos</span>
+        <span class="chip">Civil</span>
+      </div>
+    </section>
+
+    <!-- AVATARES -->
+    <section id="avatares">
+      <div class="sec-head"><span class="num">07</span><h2>Avatares</h2></div>
+      <div class="spec">
+        <div class="k">Propósito</div><div class="v">Identificar usuario o cliente en cabeceras, tablas y partes de un proceso.</div>
+        <div class="k">Tamaños</div><div class="v">sm 26px (filas de tabla), md 34px (topbar), lg 48px (perfil).</div>
+        <div class="k">Fallback</div><div class="v">Sin foto: iniciales en mono sobre gradiente neutro — nunca color aleatorio saturado.</div>
+      </div>
+      <div class="demo">
+        <div class="avatar avatar-sm">CA</div>
+        <div class="avatar avatar-md">CA</div>
+        <div class="avatar avatar-lg">CA</div>
+      </div>
+    </section>
+
+    <!-- NAV / SIDEBAR -->
+    <section id="navegacion">
+      <div class="sec-head"><span class="num">08</span><h2>Navegación / Sidebar</h2></div>
+      <div class="spec">
+        <div class="k">Propósito</div><div class="v">Navegación principal persistente entre módulos.</div>
+        <div class="k">Estado activo</div><div class="v">Borde izquierdo dorado de 2px + fondo `--gold-dim` + texto `--gold-bright`. Nunca solo un cambio de color de texto.</div>
+        <div class="k">Responsive</div><div class="v">Se oculta bajo 900px; se reemplaza por navegación inferior o menú hamburguesa (a definir en la próxima iteración mobile).</div>
+      </div>
+      <div class="demo">
+        <div class="nav-mini">
+          <div class="nav-item active">Inicio</div>
+          <div class="nav-item">Agenda</div>
+          <div class="nav-item">Procesos</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TIMELINE -->
+    <section id="timeline">
+      <div class="sec-head"><span class="num">09</span><h2>Timeline (Docket Rail)</h2></div>
+      <div class="spec">
+        <div class="k">Propósito</div><div class="v">Elemento de firma de LexFlow. Representa cronología: audiencias, actuaciones, vencimientos, notas, hitos.</div>
+        <div class="k">Estados del nodo</div><div class="v">Vacío (pendiente), Verde relleno (completado), Dorado con halo (actual/en curso).</div>
+        <div class="k">Reutilización</div><div class="v">Usado en Inicio, Centro de Expediente y Centro de Agenda con el mismo lenguaje visual — no crear una variante nueva por pantalla.</div>
+      </div>
+      <div class="demo col" style="max-width:320px;">
+        <div class="docket">
+          <div class="docket-item done"><div class="docket-title">Presentación de demanda</div><div class="docket-sub">02/03/2023</div></div>
+          <div class="docket-item current"><div class="docket-title">Audiencia inicial</div><div class="docket-sub">04/07/2026 · 09:30</div></div>
+          <div class="docket-item"><div class="docket-title">Audiencia de pruebas</div><div class="docket-sub">Pendiente</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODALES -->
+    <section id="modales">
+      <div class="sec-head"><span class="num">10</span><h2>Modales</h2></div>
+      <div class="spec">
+        <div class="k">Propósito</div><div class="v">Interrumpir el flujo para una decisión puntual (confirmar, crear rápido).</div>
+        <div class="k">Comportamiento</div><div class="v">Overlay 50% negro, cierre con click afuera o Escape, foco atrapado dentro del modal (accesibilidad).</div>
+        <div class="k">Tamaño</div><div class="v">max-width 340-480px según contenido; nunca pantalla completa en desktop.</div>
+      </div>
+      <div class="demo col">
+        <div class="modal-frame">
+          <div class="modal">
+            <h4>¿Eliminar esta actuación?</h4>
+            <p>Esta acción no se puede deshacer. El registro se marcará como eliminado (soft delete).</p>
+            <div class="modal-actions"><button class="btn btn-sm btn-secondary">Cancelar</button><button class="btn btn-sm btn-danger">Eliminar</button></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ALERTAS / TOASTS -->
+    <section id="alertas">
+      <div class="sec-head"><span class="num">11</span><h2>Alertas y Toasts</h2></div>
+      <div class="spec">
+        <div class="k">Alerta</div><div class="v">Persistente, dentro del flujo de la página (ej. "vencimiento próximo"). No se cierra sola.</div>
+        <div class="k">Toast</div><div class="v">Flotante, temporal (4-6s), confirma una acción ("Documento guardado"). Esquina inferior derecha en desktop, superior en mobile.</div>
+      </div>
+      <div class="demo col">
+        <div class="alert danger">⚠ Apelación vence en 2 días — Proceso 2023-0456</div>
+        <div class="alert success">✓ Cambios guardados correctamente</div>
+        <div class="toast">✓ Nueva actuación registrada</div>
+      </div>
+    </section>
+
+    <!-- PANELES -->
+    <section id="paneles">
+      <div class="sec-head"><span class="num">12</span><h2>Paneles</h2></div>
+      <div class="spec">
+        <div class="k">Propósito</div><div class="v">Contenedor principal de cada sección dentro de un Centro de Trabajo (ej. "Timeline", "Panel de IA").</div>
+        <div class="k">Estructura</div><div class="v">Header (título + contador/acción) + cuerpo. Radio 16px (mayor que tarjetas, para diferenciarlos de componentes internos).</div>
+      </div>
+      <div class="demo col">
+        <div class="card" style="border-radius:var(--radius-lg); padding:18px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:10px;"><h4>Vencimientos próximos</h4><span class="eyebrow">Ver todos →</span></div>
+          <p>Contenido del panel aquí.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- FORMULARIOS -->
+    <section id="formularios">
+      <div class="sec-head"><span class="num">13</span><h2>Formularios</h2></div>
+      <div class="spec">
+        <div class="k">Propósito</div><div class="v">Composición de Inputs + Selectores + Botones para crear/editar registros.</div>
+        <div class="k">Regla</div><div class="v">Máximo 1 columna en mobile, 2 columnas en desktop cuando los campos son cortos (ej. fecha + hora).</div>
+        <div class="k">Validación</div><div class="v">Inline, debajo del campo — nunca solo al final del formulario.</div>
+      </div>
+      <div class="demo col">
+        <div class="form-row"><span class="input-label">Título de la actuación</span><input class="input" placeholder="Ej. Audiencia de pruebas"></div>
+        <div class="form-row"><span class="input-label">Fecha</span><input class="input" placeholder="dd/mm/aaaa"></div>
+        <button class="btn btn-md btn-primary" style="align-self:flex-start;">Guardar actuación</button>
+      </div>
+    </section>
+
+    <!-- BUSCADOR -->
+    <section id="buscador">
+      <div class="sec-head"><span class="num">14</span><h2>Buscador</h2></div>
+      <div class="spec">
+        <div class="k">Propósito</div><div class="v">Búsqueda de texto libre dentro de listados (Procesos, Clientes, Documentos).</div>
+        <div class="k">Diferencia con consulta IA</div><div class="v">El buscador filtra datos existentes; la barra de consulta jurídica (Centro de IA) interpreta lenguaje natural — visualmente similares pero con ícono de color distinto (neutro vs. púrpura).</div>
+      </div>
+      <div class="demo col">
+        <div class="search-bar" style="max-width:320px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input placeholder="Buscar por cliente, expediente…"></div>
+      </div>
+    </section>
+
+    <!-- FILTROS -->
+    <section id="filtros">
+      <div class="sec-head"><span class="num">15</span><h2>Filtros</h2></div>
+      <div class="spec">
+        <div class="k">Propósito</div><div class="v">Acotar un listado por categoría (materia, estado, prioridad).</div>
+        <div class="k">Patrón</div><div class="v">Chips horizontales con scroll en mobile, nunca dropdown de filtros en la primera capa — reduce toques.</div>
+      </div>
+      <div class="demo">
+        <span class="chip active">Todos</span><span class="chip">Civil</span><span class="chip">Laboral</span><span class="chip">Comercial</span><span class="chip">Familia</span>
+      </div>
+    </section>
+
+    <!-- PAGINACIÓN -->
+    <section id="paginacion">
+      <div class="sec-head"><span class="num">16</span><h2>Paginación</h2></div>
+      <div class="spec">
+        <div class="k">Propósito</div><div class="v">Navegar listados largos (ej. bitácora histórica, procesos archivados).</div>
+        <div class="k">Alternativa</div><div class="v">Scroll infinito para timelines; paginación numerada solo en tablas administrativas.</div>
+      </div>
+      <div class="demo">
+        <div class="pagination">
+          <div class="page-btn">‹</div><div class="page-btn active">1</div><div class="page-btn">2</div><div class="page-btn">3</div><div class="page-btn">›</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CALENDARIO -->
+    <section id="calendario">
+      <div class="sec-head"><span class="num">17</span><h2>Calendario</h2></div>
+      <div class="spec">
+        <div class="k">Propósito</div><div class="v">Vista mensual de audiencias y vencimientos, complementaria a la vista de Jornada diaria.</div>
+        <div class="k">Indicador</div><div class="v">Punto dorado bajo el día con eventos; el día actual con fondo `--gold-dim`.</div>
+      </div>
+      <div class="demo">
+        <div class="cal">
+          <div class="dow">D</div><div class="dow">L</div><div class="dow">M</div><div class="dow">M</div><div class="dow">J</div><div class="dow">V</div><div class="dow">S</div>
+          <div class="d">1</div><div class="d">2</div><div class="d">3</div><div class="d today">4</div><div class="d">5</div><div class="d">6</div><div class="d">7</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ESTADOS -->
+    <section id="estados">
+      <div class="sec-head"><span class="num">18</span><h2>Estados: vacío, carga, error, skeleton</h2></div>
+      <div class="spec">
+        <div class="k">Vacío</div><div class="v">Borde punteado + ícono + mensaje + CTA. Nunca una pantalla en blanco.</div>
+        <div class="k">Carga</div><div class="v">Skeleton con pulso (1.4s), misma forma que el contenido real — nunca spinner genérico.</div>
+        <div class="k">Error</div><div class="v">Ícono en color danger + mensaje claro + acción de reintentar.</div>
+      </div>
+      <div class="demo">
+        <div class="state-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 6h16M4 12h16M4 18h10"/></svg><h4>Sin procesos todavía</h4><p>Crea el primero para empezar.</p></div>
+        <div class="state-box error"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><h4>Error al cargar</h4><p>Reintentar</p></div>
+        <div style="display:flex; flex-direction:column; gap:8px; flex:1; min-width:160px;"><div class="skel" style="width:70%;"></div><div class="skel"></div><div class="skel" style="width:50%;"></div></div>
+      </div>
+    </section>
+
+    <!-- CONFIRMACIONES -->
+    <section id="confirmaciones">
+      <div class="sec-head"><span class="num">19</span><h2>Confirmaciones</h2></div>
+      <div class="spec">
+        <div class="k">Propósito</div><div class="v">Variante de Modal para acciones irreversibles (eliminar, cerrar proceso).</div>
+        <div class="k">Regla</div><div class="v">El botón destructivo siempre a la derecha, nunca preseleccionado — evita eliminar por error de doble tap.</div>
+      </div>
+      <div class="demo col">
+        <div class="modal-frame">
+          <div class="modal">
+            <h4>¿Cerrar este proceso?</h4>
+            <p>El proceso pasará a "Archivado". Podrás reabrirlo desde el listado.</p>
+            <div class="modal-actions"><button class="btn btn-sm btn-secondary">Cancelar</button><button class="btn btn-sm btn-primary">Confirmar</button></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- INDICADORES DE RIESGO / PRIORIDAD -->
+    <section id="indicadores">
+      <div class="sec-head"><span class="num">20</span><h2>Indicadores de riesgo y prioridad</h2></div>
+      <div class="spec">
+        <div class="k">Origen del dato</div><div class="v">Atributo manual definido por el abogado (Alta/Media/Baja — Alto/Medio/Bajo). La IA podrá sugerir un valor, pero no lo modifica automáticamente (decisión de dirección, ver DESIGN-ROADMAP D-014).</div>
+        <div class="k">Semáforo</div><div class="v">Mismo lenguaje de color en toda la app: rojo = alto, dorado = medio, verde = bajo. Un solo sistema, no uno por pantalla.</div>
+      </div>
+      <div class="demo">
+        <div class="indicator risk-high"><span class="dot"></span>Riesgo alto</div>
+        <div class="indicator risk-med"><span class="dot"></span>Riesgo medio</div>
+        <div class="indicator risk-low"><span class="dot"></span>Riesgo bajo</div>
+      </div>
+    </section>
+
+    <!-- IA -->
+    <section id="ia">
+      <div class="sec-head"><span class="num">21</span><h2>Componentes de IA</h2></div>
+      <div class="spec">
+        <div class="k">Principio</div><div class="v">La IA nunca se disfraza de chat genérico. Se identifica con color púrpura y el "ai-dot" (punto con halo) en cualquier contexto donde aparezca.</div>
+        <div class="k">Componentes</div><div class="v">Badge de IA (etiqueta), Sugerencia (barra lateral púrpura + texto), Barra de consulta (buscador con ícono púrpura en vez de neutro).</div>
+        <div class="k">Regla de contenido</div><div class="v">Todo contenido de IA hoy es ilustrativo — no se presenta como dato real hasta que el modelo esté conectado.</div>
+      </div>
+      <div class="demo col">
+        <div class="ai-badge"><span class="ai-dot"></span>SUGERIDO POR IA</div>
+        <div class="ai-suggestion">Preparar pliego de posiciones para la audiencia inicial</div>
+      </div>
+    </section>
+
+    <!-- RESPONSIVE -->
+    <section id="responsive">
+      <div class="sec-head"><span class="num">22</span><h2>Reglas responsive</h2></div>
+      <div class="spec">
+        <div class="k">Teléfono</div><div class="v">&lt;700px — 1 columna, sidebar oculto, tablas → tarjetas apiladas, chips con scroll horizontal.</div>
+        <div class="k">Tablet</div><div class="v">700–1080px — 2 columnas donde antes había 3-4, sidebar visible desde 900px.</div>
+        <div class="k">Escritorio</div><div class="v">&gt;1080px — grillas completas (3-4 columnas), sidebar fijo de 220-240px. (Futuro — la app hoy es mobile-first.)</div>
+        <div class="k">Unidad base</div><div class="v">Espaciado en múltiplos de 4px (4/8/12/16/22/32) — ya aplicado en todos los componentes de esta biblioteca.</div>
+      </div>
+    </section>
+
+  </main>
+</div>
+</body>
+</html>
