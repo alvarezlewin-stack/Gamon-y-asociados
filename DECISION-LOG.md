@@ -118,3 +118,15 @@ Se reemplazaron los 6 tokens de color en `app.js`, `manifest.json` e `index.html
 Se agregó el store `actuaciones` (`MIGRACIONES.md` v3, único índice: `procesoId`), reglas de integridad referencial (`actuaciones → procesos` como composición, igual criterio que `proceso_partes`; `actuaciones → tipos_actuacion` como referencia externa), `validarActuacion` en `ValidationService`, y el servicio siguiendo el mismo patrón que los otros 4. `listByProceso` ya devuelve las actuaciones ordenadas cronológicamente — es la fuente de datos real que el futuro Docket Rail necesita.
 
 **Contexto:** ambos avances se hicieron sin necesitar nada nuevo de Claude B — toda la información de diseño ya estaba disponible en `DESIGN-ROADMAP.md` y la biblioteca de componentes.
+
+---
+
+## Depuración — Pantalla negra al arrancar (en curso)
+
+**Decisión 22 — Limpieza de código zombie en `storage-service.js`.**
+Se encontraron 2 definiciones de `runTransaction()` (una vieja, sin usar, sobrescrita silenciosamente por la nueva) y una clave duplicada en el objeto exportado — restos de ediciones acumuladas sobre un archivo largo. Se eliminó la versión vieja. No se confirmó todavía que esto sea la causa raíz del cuelgue reportado.
+
+**Decisión 23 — Reintroducción temporal del cazador de errores visible en pantalla.**
+Mismo mecanismo que resolvió el bug histórico de Babel: mostrar el error real (mensaje + archivo + línea) directamente en la pantalla del celular, sin necesitar computadora ni consola. Se suma también un manejador de `unhandledrejection` (promesas rechazadas sin capturar), que no existía antes. **Es temporal — sacar apenas se identifique y corrija la causa real**, volviendo al manejo silencioso/profesional (Etapa A de la auditoría PWA).
+
+**Aclaración de alcance:** los archivos entregados por Claude B en esta misma conversación (mockups HTML, `DESIGN-ROADMAP.md`, `COMPONENTS.md`, etc.) no están conectados a `index.html` y se descartaron como causa posible — no se integran todavía, para no mezclar la reparación de un bug de producción con una iteración de diseño nueva.
