@@ -130,3 +130,23 @@ Se encontraron 2 definiciones de `runTransaction()` (una vieja, sin usar, sobres
 Mismo mecanismo que resolvió el bug histórico de Babel: mostrar el error real (mensaje + archivo + línea) directamente en la pantalla del celular, sin necesitar computadora ni consola. Se suma también un manejador de `unhandledrejection` (promesas rechazadas sin capturar), que no existía antes. **Es temporal — sacar apenas se identifique y corrija la causa real**, volviendo al manejo silencioso/profesional (Etapa A de la auditoría PWA).
 
 **Aclaración de alcance:** los archivos entregados por Claude B en esta misma conversación (mockups HTML, `DESIGN-ROADMAP.md`, `COMPONENTS.md`, etc.) no están conectados a `index.html` y se descartaron como causa posible — no se integran todavía, para no mezclar la reparación de un bug de producción con una iteración de diseño nueva.
+
+---
+
+## Primera implementación real de la interfaz LexFlow (post cierre de fase de diseño)
+
+**Decisión 24 — Tokens del Design System 1.0 cargados globalmente como CSS custom properties.**
+Se agregaron las variables de `lexflow-component-library.html` (D-013, fuente oficial) directo a `index.html`: `--bg`, `--card`, `--hairline`, `--hairline-soft`, `--gold`, `--gold-bright`, `--danger`, `--success`, `--info`, `--purple`. `app.js` ahora referencia `var(--token)` en 50 lugares en vez de hexadecimales sueltos — un cambio de Design System futuro se edita en un solo lugar.
+
+**Decisión 25 — Marca LexFlow™ permanente agregada al header (D-004).**
+Encabezado eyebrow "LEXFLOW™" (mono, dorado, discreto) arriba del logo del estudio — cumple la doble identidad de marca: LexFlow fijo arriba, estudio configurable abajo, nunca al revés.
+
+**Decisión 26 — Corrección real de bordes: de "boxShadow dorado" a "hairline" (D-001).**
+El código anterior usaba un tinte dorado sutil (`#C9A24B22`) como borde de todas las tarjetas — el Design System 1.0 aprobado reserva el dorado solo para acentos y estados activos, nunca como relleno/borde de superficie. Se corrigió a `var(--hairline-soft)`, el patrón real que usa `lexflow-component-library.html`. No es un capricho estético: es corregir una desviación real del sistema aprobado.
+
+**Alcance de esta iteración (lo que cambió vs. lo que sigue igual):**
+- ✅ Identidad LexFlow™, saludo, navegación inferior, botón flotante, todas las tarjetas (Agenda, Clientes, Notas, Vencimientos): ya usan el Design System 1.0 real.
+- ⏳ Sigue pendiente: Centro de Inicio, Centro de Expediente, Centro de Agenda, Centro de Inteligencia Jurídica como pantallas nuevas — esta iteración fue recolorear/retocar la app existente, no construir las pantallas nuevas de Claude B (eso requiere `ActuacionService` conectado a UI real, ya existe el servicio, falta la pantalla).
+- ⏳ Sidebar: no aplica todavía — la app sigue con navegación inferior de pestañas (mobile-first), consistente con cómo se usa hoy; migrar a sidebar es un cambio de layout mayor, no de estilo, y no se hizo en esta pasada para no arriesgar la estabilidad.
+
+**Compatibilidad:** total. Ningún dato ni lógica de negocio se tocó — solo presentación. `StorageService`, `IndexedDB`, todos los servicios: sin cambios.

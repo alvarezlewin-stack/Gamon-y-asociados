@@ -67,6 +67,21 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 
   <style>
+    /* ===== LexFlow Design System 1.0 — tokens oficiales (fuente: lexflow-component-library.html, D-013) ===== */
+    :root {
+      --bg: #0A0C0F; --card: #14171D;
+      --hairline: #262B33; --hairline-soft: #1D2127;
+      --text: #ECEDEF; --text-dim: #8B929E; --text-faint: #5B616B;
+      --gold: #C9A24B; --gold-bright: #E4C878; --gold-dim: rgba(201,162,75,0.12);
+      --danger: #C9564B; --danger-dim: rgba(201,86,75,0.12);
+      --success: #4C9A6A; --success-dim: rgba(76,154,106,0.12);
+      --info: #4C7FC9; --info-dim: rgba(76,127,201,0.12);
+      --purple: #9B7FC9; --purple-dim: rgba(155,127,201,0.14);
+      --radius: 10px; --radius-lg: 16px;
+    }
+    .eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: .13em; text-transform: uppercase; color: var(--text-faint); }
+    .lf-card { background: var(--card); border: 1px solid var(--hairline-soft); border-radius: var(--radius); }
+    .lf-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; }
     html, body, #root { height: 100%; }
     body { margin: 0; background: #0A0C0F; -webkit-tap-highlight-color: transparent; }
     * { -webkit-user-select: none; user-select: none; }

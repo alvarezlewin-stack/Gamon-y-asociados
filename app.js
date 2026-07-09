@@ -74,14 +74,14 @@ function addBusinessDays(startDateStr, numDays, feriados) {
 function urgencyOf(dateStr) {
     const diff = daysUntil(dateStr);
     if (diff < 0)
-        return { color: "#C9564B", label: "Vencido" };
+        return { color: "var(--danger)", label: "Vencido" };
     if (diff === 0)
-        return { color: "#C9564B", label: "Hoy" };
+        return { color: "var(--danger)", label: "Hoy" };
     if (diff <= 2)
         return { color: "#D97A3C", label: `En ${diff} día${diff === 1 ? "" : "s"}` };
     if (diff <= 7)
         return { color: "#D9A63C", label: `En ${diff} días` };
-    return { color: "#4C9A6A", label: `En ${diff} días` };
+    return { color: "var(--success)", label: `En ${diff} días` };
 }
 // ---------- Componentes reutilizables ----------
 function SealDot({ color, size = 10 }) {
@@ -89,22 +89,22 @@ function SealDot({ color, size = 10 }) {
 }
 function FolderTab({ children }) {
     return (React.createElement("div", { className: "relative" },
-        React.createElement("div", { className: "absolute -top-2 left-4 h-2 w-14 rounded-t-md", style: { background: "#C9A24B" } }),
+        React.createElement("div", { className: "absolute -top-2 left-4 h-2 w-14 rounded-t-md", style: { background: "var(--gold)" } }),
         children));
 }
 function EmptyState({ icon, title, hint }) {
     return (React.createElement("div", { className: "flex flex-col items-center justify-center text-center py-14 px-6" },
         React.createElement("div", { className: "w-14 h-14 rounded-full flex items-center justify-center mb-4", style: { background: "#ECEDEF12" } },
-            React.createElement(Icon, { name: icon, size: 24, color: "#ECEDEF" })),
-        React.createElement("p", { style: { fontFamily: "'Fraunces', serif", color: "#ECEDEF" }, className: "text-lg font-medium" }, title),
+            React.createElement(Icon, { name: icon, size: 24, color: "var(--text)" })),
+        React.createElement("p", { style: { fontFamily: "'Fraunces', serif", color: "var(--text)" }, className: "text-lg font-medium" }, title),
         React.createElement("p", { className: "text-sm mt-1 max-w-[240px]", style: { color: "#ECEDEFAA" } }, hint)));
 }
 function Modal({ title, onClose, children }) {
     return (React.createElement("div", { className: "fixed inset-0 z-50 flex items-end sm:items-center justify-center", style: { background: "#000000CC" }, onClick: onClose },
-        React.createElement("div", { className: "w-full sm:max-w-md max-h-[88vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl", style: { background: "#14171D" }, onClick: (e) => e.stopPropagation() },
-            React.createElement("div", { className: "sticky top-0 flex items-center justify-between px-5 py-4 border-b", style: { background: "#14171D", borderColor: "#C9A24B22" } },
-                React.createElement("h3", { style: { fontFamily: "'Fraunces', serif", color: "#ECEDEF" }, className: "text-lg font-semibold" }, title),
-                React.createElement("button", { onClick: onClose, className: "p-1 rounded-full", style: { color: "#ECEDEF" } },
+        React.createElement("div", { className: "w-full sm:max-w-md max-h-[88vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl", style: { background: "var(--card)" }, onClick: (e) => e.stopPropagation() },
+            React.createElement("div", { className: "sticky top-0 flex items-center justify-between px-5 py-4 border-b", style: { background: "var(--card)", borderColor: "var(--hairline)" } },
+                React.createElement("h3", { style: { fontFamily: "'Fraunces', serif", color: "var(--text)" }, className: "text-lg font-semibold" }, title),
+                React.createElement("button", { onClick: onClose, className: "p-1 rounded-full", style: { color: "var(--text)" } },
                     React.createElement(Icon, { name: "x", size: 20 }))),
             React.createElement("div", { className: "p-5" }, children))));
 }
@@ -114,8 +114,8 @@ function Field({ label, children }) {
         children));
 }
 const inputStyle = {
-    width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #C9A24B40",
-    background: "#0A0C0F", color: "#ECEDEF", fontFamily: "'Public Sans', sans-serif", fontSize: 15, outline: "none",
+    width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid var(--hairline)",
+    background: "var(--bg)", color: "var(--text)", fontFamily: "'Public Sans', sans-serif", fontSize: 15, outline: "none",
 };
 // ---------- App principal ----------
 function App() {
@@ -207,14 +207,15 @@ function App() {
         return groups;
     }, [upcomingEvents]);
     if (loading) {
-        return (React.createElement("div", { className: "min-h-screen flex items-center justify-center", style: { background: "#0A0C0F" } },
+        return (React.createElement("div", { className: "min-h-screen flex items-center justify-center", style: { background: "var(--bg)" } },
             React.createElement("img", { src: "logo.jpg", alt: "Gam\u00F3n & Asociados", className: "h-14 object-contain" })));
     }
-    return (React.createElement("div", { className: "min-h-screen flex flex-col", style: { background: "#0A0C0F", fontFamily: "'Public Sans', sans-serif" } },
-        React.createElement("header", { className: "px-5 pt-5 pb-4 sticky top-0 z-30 flex flex-col items-center", style: { background: "#000000", borderBottom: "1px solid #C9A24B22" } },
-            React.createElement("img", { src: "logo.jpg", alt: "Gam\u00F3n & Asociados", className: "h-16 object-contain rounded-md" }),
-            React.createElement("p", { style: { color: "#ECEDEF", fontFamily: "'Fraunces', serif", fontStyle: "italic", fontWeight: 500 }, className: "text-[15px] tracking-wide mt-2" }, I18N.construirSaludoCompleto()),
-            React.createElement("p", { style: { color: "#C9A24Bcc", fontFamily: "'IBM Plex Mono', monospace" }, className: "text-[11px] tracking-wide mt-1 capitalize" }, new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })),
+    return (React.createElement("div", { className: "min-h-screen flex flex-col", style: { background: "var(--bg)", fontFamily: "'Public Sans', sans-serif" } },
+        React.createElement("header", { className: "px-5 pt-4 pb-4 sticky top-0 z-30 flex flex-col items-center", style: { background: "#000000", borderBottom: "1px solid var(--hairline)" } },
+            React.createElement("span", { className: "eyebrow", style: { color: "var(--gold-bright)" } }, "LEXFLOW\u2122"),
+            React.createElement("img", { src: "logo.jpg", alt: "Gam\u00F3n & Asociados", className: "h-14 object-contain rounded-md mt-2" }),
+            React.createElement("p", { style: { color: "var(--text)", fontFamily: "'Fraunces', serif", fontStyle: "italic", fontWeight: 500 }, className: "text-[15px] tracking-wide mt-2" }, I18N.construirSaludoCompleto()),
+            React.createElement("p", { style: { color: "var(--gold)", fontFamily: "'IBM Plex Mono', monospace" }, className: "text-[11px] tracking-wide mt-1 capitalize" }, new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })),
             saveError && React.createElement("p", { className: "text-[11px] mt-2", style: { color: "#E0917D" } }, "No se pudo guardar. El almacenamiento del celular puede estar lleno.")),
         React.createElement("main", { className: "flex-1 px-4 pt-5 pb-24 max-w-xl w-full mx-auto" },
             tab === "agenda" && React.createElement(AgendaTab, { eventsByDay: eventsByDay, clientById: clientById, onToggleDone: toggleEventDone, onDelete: deleteEvent }),
@@ -227,16 +228,16 @@ function App() {
             else if (tab === "notas")
                 setShowAddNote(true);
             else
-                setShowAddEvent(true); }, className: "fixed bottom-20 right-5 w-14 h-14 rounded-full flex items-center justify-center shadow-lg z-30", style: { background: "#C9A24B" }, "aria-label": "Agregar" },
-            React.createElement(Icon, { name: "plus", size: 26, color: "#0A0C0F", strokeWidth: 2.5 })),
-        React.createElement("nav", { className: "fixed bottom-0 left-0 right-0 flex justify-around items-center py-2.5 z-30 border-t", style: { background: "#14171D", borderColor: "#C9A24B22" } }, [
+                setShowAddEvent(true); }, className: "fixed bottom-20 right-5 w-14 h-14 rounded-full flex items-center justify-center shadow-lg z-30", style: { background: "var(--gold)" }, "aria-label": "Agregar" },
+            React.createElement(Icon, { name: "plus", size: 26, color: "var(--bg)", strokeWidth: 2.5 })),
+        React.createElement("nav", { className: "fixed bottom-0 left-0 right-0 flex justify-around items-center py-2.5 z-30 border-t", style: { background: "var(--card)", borderColor: "var(--hairline)" } }, [
             { id: "agenda", label: "Agenda", icon: "calendar" },
             { id: "clientes", label: "Clientes", icon: "briefcase" },
             { id: "vencimientos", label: "Vencimientos", icon: "alertTriangle" },
             { id: "notas", label: "Notas", icon: "stickyNote" },
         ].map(({ id, label, icon }) => (React.createElement("button", { key: id, onClick: () => { setTab(id); setSelectedClient(null); }, className: "flex flex-col items-center gap-1 px-3 py-1" },
-            React.createElement(Icon, { name: icon, size: 20, color: tab === id ? "#C9A24B" : "#ECEDEF70", strokeWidth: tab === id ? 2.3 : 1.8 }),
-            React.createElement("span", { className: "text-[10px] font-medium", style: { color: tab === id ? "#C9A24B" : "#ECEDEF70" } }, label))))),
+            React.createElement(Icon, { name: icon, size: 20, color: tab === id ? "var(--gold)" : "#ECEDEF70", strokeWidth: tab === id ? 2.3 : 1.8 }),
+            React.createElement("span", { className: "text-[10px] font-medium", style: { color: tab === id ? "var(--gold)" : "#ECEDEF70" } }, label))))),
         showAddEvent && React.createElement(AddEventModal, { clients: clients, preset: typeof showAddEvent === "object" ? showAddEvent : null, onClose: () => setShowAddEvent(false), onSave: (ev) => { addEvent(ev); setShowAddEvent(false); } }),
         showAddClient && React.createElement(AddClientModal, { onClose: () => setShowAddClient(false), onSave: (c) => { addClient(c); setShowAddClient(false); } }),
         showAddNote && React.createElement(AddNoteModal, { clients: clients, onClose: () => setShowAddNote(false), onSave: (n) => { addNote(n); setShowAddNote(false); } })));
@@ -248,16 +249,16 @@ function AgendaTab({ eventsByDay, clientById, onToggleDone, onDelete }) {
         return React.createElement(EmptyState, { icon: "calendar", title: "Sin eventos pr\u00F3ximos", hint: "Toc\u00E1 el bot\u00F3n + para agregar una audiencia, vencimiento o reuni\u00F3n." });
     return (React.createElement("div", { className: "space-y-6" }, days.map((date) => (React.createElement("div", { key: date },
         React.createElement("div", { className: "flex items-baseline gap-2 mb-2 px-1" },
-            React.createElement("h2", { style: { fontFamily: "'Fraunces', serif", color: "#ECEDEF" }, className: "text-base font-semibold capitalize" }, formatDateLong(date)),
+            React.createElement("h2", { style: { fontFamily: "'Fraunces', serif", color: "var(--text)" }, className: "text-base font-semibold capitalize" }, formatDateLong(date)),
             React.createElement("span", { style: { color: "#ECEDEF7A", fontFamily: "'IBM Plex Mono', monospace" }, className: "text-xs" }, formatDateShort(date))),
         React.createElement("div", { className: "space-y-2.5" }, eventsByDay[date].map((ev) => React.createElement(EventCard, { key: ev.id, event: ev, client: clientById(ev.clienteId), onToggleDone: onToggleDone, onDelete: onDelete }))))))));
 }
 function EventCard({ event, client, onToggleDone, onDelete }) {
     const urgency = urgencyOf(event.date);
     const tipoInfo = TIPOS_EVENTO.find((t) => t.id === event.tipo) || TIPOS_EVENTO[3];
-    return (React.createElement("div", { className: "rounded-xl p-4 flex items-start gap-3", style: { background: "#14171D", boxShadow: "0 0 0 1px #C9A24B22" } },
+    return (React.createElement("div", { className: "rounded-xl p-4 flex items-start gap-3", style: { background: "var(--card)", border: "1px solid var(--hairline-soft)" } },
         React.createElement("button", { onClick: () => onToggleDone(event.id), className: "mt-0.5 flex-shrink-0", "aria-label": "Marcar como hecho" },
-            React.createElement(Icon, { name: "checkCircle", size: 20, color: event.done ? "#4C9A6A" : "#ECEDEF40" })),
+            React.createElement(Icon, { name: "checkCircle", size: 20, color: event.done ? "var(--success)" : "#ECEDEF40" })),
         React.createElement("div", { className: "flex-1 min-w-0" },
             React.createElement("div", { className: "flex items-center gap-1.5 mb-1" },
                 React.createElement(Icon, { name: tipoInfo.icon, size: 13, color: "#ECEDEF88" }),
@@ -265,7 +266,7 @@ function EventCard({ event, client, onToggleDone, onDelete }) {
                 event.time && React.createElement(React.Fragment, null,
                     React.createElement("span", { style: { color: "#ECEDEF50" } }, "\u00B7"),
                     React.createElement("span", { className: "text-[11px]", style: { color: "#ECEDEF88", fontFamily: "'IBM Plex Mono', monospace" } }, event.time))),
-            React.createElement("p", { style: { color: "#ECEDEF" }, className: "font-medium text-[15px] leading-snug" }, event.titulo),
+            React.createElement("p", { style: { color: "var(--text)" }, className: "font-medium text-[15px] leading-snug" }, event.titulo),
             client && React.createElement("p", { style: { color: "#ECEDEF90" }, className: "text-xs mt-0.5" },
                 client.nombre,
                 client.expediente ? ` · Exp. ${client.expediente}` : ""),
@@ -286,17 +287,17 @@ function EventCard({ event, client, onToggleDone, onDelete }) {
 }
 function ClientesTab({ clients, search, setSearch, events, onSelect }) {
     return (React.createElement("div", null,
-        React.createElement("div", { className: "flex items-center gap-2 rounded-full px-4 py-2.5 mb-4", style: { background: "#14171D", boxShadow: "0 0 0 1px #C9A24B22" } },
+        React.createElement("div", { className: "flex items-center gap-2 rounded-full px-4 py-2.5 mb-4", style: { background: "var(--card)", border: "1px solid var(--hairline-soft)" } },
             React.createElement(Icon, { name: "search", size: 16, color: "#ECEDEF7A" }),
-            React.createElement("input", { value: search, onChange: (e) => setSearch(e.target.value), placeholder: "Buscar cliente o expediente\u2026", className: "flex-1 bg-transparent outline-none text-sm", style: { color: "#ECEDEF" } })),
+            React.createElement("input", { value: search, onChange: (e) => setSearch(e.target.value), placeholder: "Buscar cliente o expediente\u2026", className: "flex-1 bg-transparent outline-none text-sm", style: { color: "var(--text)" } })),
         clients.length === 0 ? (React.createElement(EmptyState, { icon: "briefcase", title: "Sin clientes cargados", hint: "Toc\u00E1 + para crear la primera ficha de cliente o expediente." })) : (React.createElement("div", { className: "space-y-3" }, clients.map((c) => {
             const pending = events.filter((e) => e.clienteId === c.id && !e.done).length;
             return (React.createElement(FolderTab, { key: c.id },
-                React.createElement("button", { onClick: () => onSelect(c), className: "w-full text-left rounded-xl rounded-tl-none p-4 flex items-center gap-3", style: { background: "#14171D", boxShadow: "0 0 0 1px #C9A24B22" } },
+                React.createElement("button", { onClick: () => onSelect(c), className: "w-full text-left rounded-xl rounded-tl-none p-4 flex items-center gap-3", style: { background: "var(--card)", border: "1px solid var(--hairline-soft)" } },
                     React.createElement("div", { className: "flex-1 min-w-0" },
-                        React.createElement("p", { style: { fontFamily: "'Fraunces', serif", color: "#ECEDEF" }, className: "font-medium" }, c.nombre),
+                        React.createElement("p", { style: { fontFamily: "'Fraunces', serif", color: "var(--text)" }, className: "font-medium" }, c.nombre),
                         React.createElement("p", { style: { color: "#ECEDEF88", fontFamily: "'IBM Plex Mono', monospace" }, className: "text-xs mt-0.5" }, c.expediente ? `Exp. ${c.expediente}` : "Sin número de expediente")),
-                    pending > 0 && React.createElement("span", { className: "text-[11px] font-semibold px-2 py-0.5 rounded-full", style: { background: "#C9564B22", color: "#C9564B" } }, pending),
+                    pending > 0 && React.createElement("span", { className: "text-[11px] font-semibold px-2 py-0.5 rounded-full", style: { background: "#C9564B22", color: "var(--danger)" } }, pending),
                     React.createElement(Icon, { name: "chevronRight", size: 16, color: "#ECEDEF60" }))));
         })))));
 }
@@ -306,22 +307,22 @@ function ClienteDetail({ client, events, notes, onBack, onDeleteClient, onToggle
         React.createElement("button", { onClick: onBack, className: "flex items-center gap-1.5 mb-4", style: { color: "#ECEDEFA0" } },
             React.createElement(Icon, { name: "arrowLeft", size: 16 }),
             React.createElement("span", { className: "text-sm" }, "Clientes")),
-        React.createElement("div", { className: "rounded-xl p-5 mb-5", style: { background: "#14171D", boxShadow: "0 0 0 1px #C9A24B22" } },
-            React.createElement("p", { style: { fontFamily: "'Fraunces', serif", color: "#ECEDEF" }, className: "text-xl font-semibold" }, client.nombre),
+        React.createElement("div", { className: "rounded-xl p-5 mb-5", style: { background: "var(--card)", border: "1px solid var(--hairline-soft)" } },
+            React.createElement("p", { style: { fontFamily: "'Fraunces', serif", color: "var(--text)" }, className: "text-xl font-semibold" }, client.nombre),
             client.expediente && React.createElement("p", { style: { color: "#D9A63C", fontFamily: "'IBM Plex Mono', monospace" }, className: "text-sm mt-1" },
                 "Exp. ",
                 client.expediente),
             client.contacto && React.createElement("p", { style: { color: "#ECEDEFA0" }, className: "text-sm mt-2" }, client.contacto),
             client.notas && React.createElement("p", { style: { color: "#ECEDEF88" }, className: "text-sm mt-2 italic" }, client.notas),
             React.createElement("button", { onClick: () => { if (window.confirm(`¿Eliminar la ficha de ${client.nombre}? Esto no borra sus eventos ni notas.`))
-                    onDeleteClient(client.id); }, className: "text-xs mt-4 flex items-center gap-1", style: { color: "#C9564B" } },
+                    onDeleteClient(client.id); }, className: "text-xs mt-4 flex items-center gap-1", style: { color: "var(--danger)" } },
                 React.createElement(Icon, { name: "trash", size: 12 }),
                 " Eliminar ficha")),
-        React.createElement("h3", { style: { fontFamily: "'Fraunces', serif", color: "#ECEDEF" }, className: "font-semibold mb-2 px-1" }, "Agenda vinculada"),
+        React.createElement("h3", { style: { fontFamily: "'Fraunces', serif", color: "var(--text)" }, className: "font-semibold mb-2 px-1" }, "Agenda vinculada"),
         sorted.length === 0 ? React.createElement("p", { style: { color: "#ECEDEF7A" }, className: "text-sm px-1 mb-5" }, "No hay eventos para este cliente todav\u00EDa.") : (React.createElement("div", { className: "space-y-2.5 mb-6" }, sorted.map((ev) => React.createElement(EventCard, { key: ev.id, event: ev, client: null, onToggleDone: onToggleDone, onDelete: onDeleteEvent })))),
-        React.createElement("h3", { style: { fontFamily: "'Fraunces', serif", color: "#ECEDEF" }, className: "font-semibold mb-2 px-1" }, "Notas"),
-        notes.length === 0 ? React.createElement("p", { style: { color: "#ECEDEF7A" }, className: "text-sm px-1" }, "Sin notas para este cliente.") : (React.createElement("div", { className: "space-y-2" }, notes.map((n) => (React.createElement("div", { key: n.id, className: "rounded-xl p-3.5 flex justify-between items-start gap-2", style: { background: "#14171D", boxShadow: "0 0 0 1px #C9A24B22" } },
-            React.createElement("p", { style: { color: "#ECEDEF" }, className: "text-sm flex-1" }, n.texto),
+        React.createElement("h3", { style: { fontFamily: "'Fraunces', serif", color: "var(--text)" }, className: "font-semibold mb-2 px-1" }, "Notas"),
+        notes.length === 0 ? React.createElement("p", { style: { color: "#ECEDEF7A" }, className: "text-sm px-1" }, "Sin notas para este cliente.") : (React.createElement("div", { className: "space-y-2" }, notes.map((n) => (React.createElement("div", { key: n.id, className: "rounded-xl p-3.5 flex justify-between items-start gap-2", style: { background: "var(--card)", border: "1px solid var(--hairline-soft)" } },
+            React.createElement("p", { style: { color: "var(--text)" }, className: "text-sm flex-1" }, n.texto),
             React.createElement("button", { onClick: () => onDeleteNote(n.id) },
                 React.createElement(Icon, { name: "trash", size: 13, color: "#ECEDEF60" })))))))));
 }
@@ -333,8 +334,8 @@ function VencimientosTab({ vencimientos, clientById, onToggleDone, onAddCalculat
     const feriados = feriadosText.split(",").map((s) => s.trim()).filter(Boolean);
     const resultado = addBusinessDays(inicio, Number(dias) || 0, feriados);
     return (React.createElement("div", null,
-        React.createElement("div", { className: "rounded-xl p-4 mb-5", style: { background: "#14171D", boxShadow: "0 0 0 1px #C9A24B22" } },
-            React.createElement("p", { style: { fontFamily: "'Fraunces', serif", color: "#ECEDEF" }, className: "font-semibold mb-3" }, "Calculadora de plazos"),
+        React.createElement("div", { className: "rounded-xl p-4 mb-5", style: { background: "var(--card)", border: "1px solid var(--hairline-soft)" } },
+            React.createElement("p", { style: { fontFamily: "'Fraunces', serif", color: "var(--text)" }, className: "font-semibold mb-3" }, "Calculadora de plazos"),
             React.createElement("div", { className: "grid grid-cols-2 gap-3 mb-3" },
                 React.createElement("div", null,
                     React.createElement("span", { className: "block text-[11px] font-semibold uppercase tracking-wide mb-1", style: { color: "#ECEDEFA0", fontFamily: "'IBM Plex Mono', monospace" } }, "Desde"),
@@ -346,10 +347,10 @@ function VencimientosTab({ vencimientos, clientById, onToggleDone, onAddCalculat
             React.createElement("input", { value: feriadosText, onChange: (e) => setFeriadosText(e.target.value), placeholder: "Feriados a excluir (AAAA-MM-DD, separados por coma)", style: Object.assign(Object.assign({}, inputStyle), { marginBottom: 12, fontSize: 13 }) }),
             React.createElement("div", { className: "flex items-center justify-between rounded-lg p-3 mb-3", style: { background: "#C9A24B18" } },
                 React.createElement("span", { className: "text-xs", style: { color: "#ECEDEFA0" } }, "Vence el"),
-                React.createElement("span", { style: { fontFamily: "'IBM Plex Mono', monospace", color: "#C9A24B" }, className: "font-semibold" }, formatDateShort(resultado))),
-            React.createElement("button", { onClick: () => onAddCalculated(resultado, labelCalc || "Vencimiento"), className: "w-full py-2.5 rounded-lg font-medium text-sm", style: { background: "#C9A24B", color: "#0A0C0F" } }, "Agregar a la agenda"),
+                React.createElement("span", { style: { fontFamily: "'IBM Plex Mono', monospace", color: "var(--gold)" }, className: "font-semibold" }, formatDateShort(resultado))),
+            React.createElement("button", { onClick: () => onAddCalculated(resultado, labelCalc || "Vencimiento"), className: "w-full py-2.5 rounded-lg font-medium text-sm", style: { background: "var(--gold)", color: "var(--bg)" } }, "Agregar a la agenda"),
             React.createElement("p", { className: "text-[11px] mt-2 text-center", style: { color: "#ECEDEF7A" } }, "Excluye s\u00E1bados, domingos y los feriados que cargues arriba.")),
-        React.createElement("h3", { style: { fontFamily: "'Fraunces', serif", color: "#ECEDEF" }, className: "font-semibold mb-2 px-1" }, "Pr\u00F3ximos vencimientos"),
+        React.createElement("h3", { style: { fontFamily: "'Fraunces', serif", color: "var(--text)" }, className: "font-semibold mb-2 px-1" }, "Pr\u00F3ximos vencimientos"),
         vencimientos.length === 0 ? React.createElement(EmptyState, { icon: "alertTriangle", title: "Sin vencimientos pendientes", hint: "Us\u00E1 la calculadora de arriba o agregalos desde la Agenda." }) : (React.createElement("div", { className: "space-y-2.5" }, vencimientos.map((ev) => React.createElement(EventCard, { key: ev.id, event: ev, client: clientById(ev.clienteId), onToggleDone: onToggleDone, onDelete: () => { } }))))));
 }
 function NotasTab({ notes, clientById, onDelete }) {
@@ -358,14 +359,14 @@ function NotasTab({ notes, clientById, onDelete }) {
         return React.createElement(EmptyState, { icon: "stickyNote", title: "Sin notas", hint: "Toc\u00E1 + para dejar una nota r\u00E1pida, vinculada o no a un cliente." });
     return (React.createElement("div", { className: "space-y-2.5" }, sorted.map((n) => {
         const client = clientById(n.clienteId);
-        return (React.createElement("div", { key: n.id, className: "rounded-xl p-4", style: { background: "#14171D", boxShadow: "0 0 0 1px #C9A24B22" } },
+        return (React.createElement("div", { key: n.id, className: "rounded-xl p-4", style: { background: "var(--card)", border: "1px solid var(--hairline-soft)" } },
             React.createElement("div", { className: "flex justify-between items-start gap-2 mb-1.5" },
                 React.createElement("span", { style: { color: "#ECEDEF7A", fontFamily: "'IBM Plex Mono', monospace" }, className: "text-[11px]" },
                     formatDateShort(n.createdAt),
                     client ? ` · ${client.nombre}` : ""),
                 React.createElement("button", { onClick: () => onDelete(n.id) },
                     React.createElement(Icon, { name: "trash", size: 13, color: "#ECEDEF60" }))),
-            React.createElement("p", { style: { color: "#ECEDEF" }, className: "text-sm leading-relaxed" }, n.texto)));
+            React.createElement("p", { style: { color: "var(--text)" }, className: "text-sm leading-relaxed" }, n.texto)));
     })));
 }
 // ---------- Modales ----------
@@ -380,7 +381,7 @@ function AddEventModal({ clients, preset, onClose, onSave }) {
         React.createElement(Field, { label: "T\u00EDtulo" },
             React.createElement("input", { style: inputStyle, value: titulo, onChange: (e) => setTitulo(e.target.value), placeholder: "Ej: Audiencia preliminar" })),
         React.createElement(Field, { label: "Tipo" },
-            React.createElement("div", { className: "flex gap-2 flex-wrap" }, TIPOS_EVENTO.map((t) => (React.createElement("button", { key: t.id, onClick: () => setTipo(t.id), className: "px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5", style: { background: tipo === t.id ? "#C9A24B" : "#ECEDEF12", color: tipo === t.id ? "#0A0C0F" : "#ECEDEF" } },
+            React.createElement("div", { className: "flex gap-2 flex-wrap" }, TIPOS_EVENTO.map((t) => (React.createElement("button", { key: t.id, onClick: () => setTipo(t.id), className: "px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5", style: { background: tipo === t.id ? "var(--gold)" : "#ECEDEF12", color: tipo === t.id ? "var(--bg)" : "var(--text)" } },
                 React.createElement(Icon, { name: t.icon, size: 12 }),
                 " ",
                 t.label))))),
@@ -395,7 +396,7 @@ function AddEventModal({ clients, preset, onClose, onSave }) {
                 clients.map((c) => React.createElement("option", { key: c.id, value: c.id }, c.nombre)))),
         React.createElement(Field, { label: "Recordatorio (d\u00EDas antes)" },
             React.createElement("input", { type: "number", min: "0", style: inputStyle, value: recordatorioDias, onChange: (e) => setRecordatorioDias(e.target.value) })),
-        React.createElement("button", { disabled: !titulo.trim() || !date, onClick: () => onSave({ titulo: titulo.trim(), tipo, date, time, clienteId: clienteId || null, recordatorioDias: Number(recordatorioDias) || 0 }), className: "w-full py-3 rounded-lg font-medium mt-2 disabled:opacity-40", style: { background: "#C9A24B", color: "#0A0C0F" } }, "Guardar evento")));
+        React.createElement("button", { disabled: !titulo.trim() || !date, onClick: () => onSave({ titulo: titulo.trim(), tipo, date, time, clienteId: clienteId || null, recordatorioDias: Number(recordatorioDias) || 0 }), className: "w-full py-3 rounded-lg font-medium mt-2 disabled:opacity-40", style: { background: "var(--gold)", color: "var(--bg)" } }, "Guardar evento")));
 }
 function AddClientModal({ onClose, onSave }) {
     const [nombre, setNombre] = useState("");
@@ -411,7 +412,7 @@ function AddClientModal({ onClose, onSave }) {
             React.createElement("input", { style: inputStyle, value: contacto, onChange: (e) => setContacto(e.target.value), placeholder: "Tel\u00E9fono o email" })),
         React.createElement(Field, { label: "Notas (opcional)" },
             React.createElement("textarea", { style: Object.assign(Object.assign({}, inputStyle), { minHeight: 70 }), value: notas, onChange: (e) => setNotas(e.target.value) })),
-        React.createElement("button", { disabled: !nombre.trim(), onClick: () => onSave({ nombre: nombre.trim(), expediente: expediente.trim(), contacto: contacto.trim(), notas: notas.trim() }), className: "w-full py-3 rounded-lg font-medium mt-2 disabled:opacity-40", style: { background: "#C9A24B", color: "#0A0C0F" } }, "Guardar ficha")));
+        React.createElement("button", { disabled: !nombre.trim(), onClick: () => onSave({ nombre: nombre.trim(), expediente: expediente.trim(), contacto: contacto.trim(), notas: notas.trim() }), className: "w-full py-3 rounded-lg font-medium mt-2 disabled:opacity-40", style: { background: "var(--gold)", color: "var(--bg)" } }, "Guardar ficha")));
 }
 function AddNoteModal({ clients, onClose, onSave }) {
     const [texto, setTexto] = useState("");
@@ -423,7 +424,7 @@ function AddNoteModal({ clients, onClose, onSave }) {
             React.createElement("select", { style: inputStyle, value: clienteId, onChange: (e) => setClienteId(e.target.value) },
                 React.createElement("option", { value: "" }, "Sin vincular"),
                 clients.map((c) => React.createElement("option", { key: c.id, value: c.id }, c.nombre)))),
-        React.createElement("button", { disabled: !texto.trim(), onClick: () => onSave({ texto: texto.trim(), clienteId: clienteId || null }), className: "w-full py-3 rounded-lg font-medium mt-2 disabled:opacity-40", style: { background: "#C9A24B", color: "#0A0C0F" } }, "Guardar nota")));
+        React.createElement("button", { disabled: !texto.trim(), onClick: () => onSave({ texto: texto.trim(), clienteId: clienteId || null }), className: "w-full py-3 rounded-lg font-medium mt-2 disabled:opacity-40", style: { background: "var(--gold)", color: "var(--bg)" } }, "Guardar nota")));
 }
 // ---------- Montaje ----------
 const root = ReactDOM.createRoot(document.getElementById("root"));
