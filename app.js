@@ -17,12 +17,12 @@ const ICON_PATHS = {
     alertTriangle: "M12 4l9 16H3zM12 10v4M12 17.5v.01",
     checkCircle: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM8 12l3 3 5-6",
     stickyNote: "M4 4h13l3 3v13H4zM17 4v4h3",
-    arrowLeft: "M19 12H5M11 6l-6 6 6 6",
-};
-function Icon({ name, size = 18, color = "currentColor", strokeWidth = 1.8 }) {
-    return (React.createElement("svg", { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: color, strokeWidth: strokeWidth, strokeLinecap: "round", strokeLinejoin: "round" },
-        React.createElement("path", { d: ICON_PATHS[name] || "" })));
-}
+    arrowLeft: "M19 12H5M11 6l-6 6 6 6
+function obtenerSaludo(nombre) {
+  const hora = new Date().getHours();
+  if (hora < 12) return `Buenos días, ${nombre}`;
+  if (hora >= 18) return `Buenas noches, ${nombre}`;
+  return `Buenas tardes, ${nombre
 // El almacenamiento de datos ahora vive en storage-service.js (StorageService).
 // App.js ya no lee ni escribe localStorage/IndexedDB directamente.
 
