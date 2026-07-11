@@ -150,3 +150,35 @@ El código anterior usaba un tinte dorado sutil (`#C9A24B22`) como borde de toda
 - ⏳ Sidebar: no aplica todavía — la app sigue con navegación inferior de pestañas (mobile-first), consistente con cómo se usa hoy; migrar a sidebar es un cambio de layout mayor, no de estilo, y no se hizo en esta pasada para no arriesgar la estabilidad.
 
 **Compatibilidad:** total. Ningún dato ni lógica de negocio se tocó — solo presentación. `StorageService`, `IndexedDB`, todos los servicios: sin cambios.
+
+---
+
+## Centro de Inicio — primera pantalla nueva real (sustitución progresiva, no reskin)
+
+**Decisión 27 — Sidebar del Design System NO se implementa en mobile; riesgo ya documentado por Claude B, no una omisión.**
+`DESIGN-HANDOFF.md` (sección 10, Claude B) señala explícitamente que el sidebar se oculta por debajo de 860px sin patrón de reemplazo definido. Forzar un sidebar de escritorio en un celular sería una interpretación propia no aprobada. Se mantiene la navegación inferior ya validada en producción, sumando "Inicio" como primer ítem, con el mismo lenguaje visual (acento dorado en el ítem activo) que pide el Design System — adaptado al patrón mobile existente, no al sidebar.
+
+**Decisión 28 — Centro de Inicio implementado con datos 100% reales, ningún número inventado.**
+Basado en el mockup real (`lexflow-design-system.html`, sección Centro de Inicio). Se omitieron deliberadamente las tarjetas "Tareas pendientes" y "Alertas importantes" del mockup original porque esos módulos no existen todavía en el sistema — se reemplazó la 4ª tarjeta por "Clientes" (dato real, ya disponible) en vez de simular una función inexistente. Fuentes de datos: Audiencias hoy y Vencimientos → `events` (Agenda, ya en uso real); Procesos activos → `ProcesoService.listAll()` (dato real, aunque hoy probablemente sea 0 si el usuario todavía no cargó ningún Proceso — es el número correcto, no un placeholder).
+
+**Error propio detectado y corregido antes de subir:** el primer intento de `InicioTab` se escribió en JSX crudo (sintaxis `<div>`) en vez de `React.createElement` — hubiera reproducido el bug histórico de pantalla negra (no hay traductor de JSX en el navegador de producción, deliberadamente, desde que se sacó Babel). Se detectó antes de entregar, se compiló correctamente con `tsc --jsx react` (mismo procedimiento que el resto del archivo) y se verificó que no quedara ningún rastro de JSX crudo.
+
+**`tab` por defecto cambia de `"agenda"` a `"inicio"`** — la app ahora abre mostrando el Centro de Inicio, tal como pidió Dirección.
+
+**Pendiente explícito para próxima iteración:** pantalla de listado/detalle de Procesos (hoy "Procesos activos" es solo un número, sin pantalla propia todavía — es el siguiente paso lógico, ya priorizado por Claude B en su propio documento).
+
+---
+
+## Centro de Inicio v2 — centro operativo real (solo UI/UX, arquitectura intacta)
+
+**Decisión 29 — Saludo con nombre temporal, sin tocar `i18n.js`.**
+Se pidió mostrar "Buenas tardes, Doctora Lourdes" ya, sin esperar a la pantalla de Configuración. Se resolvió combinando `I18N.saludoSegunHora()` (función ya existente, sin modificar) con el nombre fijo agregado directamente en `app.js`. Cuando exista el perfil real, se reemplaza esa línea por `I18N.construirSaludoCompleto()` (ya estaba implementada, queda lista para retomar).
+
+**Decisión 30 — Las 4 tarjetas de Inicio pasan a ser botones táctiles reales (`<button>`, no `<div>`), con animación de presión (`active:scale-[0.96]`) y navegación directa.** Sin tarjetas nuevas, mismos 4 contadores.
+
+**Decisión 31 — Pantalla mínima de Procesos, agregada por necesidad de UX, no por pedido explícito línea por línea.**
+La tarjeta "Procesos activos" necesitaba un destino real al tocarla — no había pantalla de Procesos todavía. Se agregó `ProcesosTab`, deliberadamente simple: lista los procesos reales (NUREJ, fecha, prioridad) sin inventar datos ni hacer joins con catálogos (eso es la próxima iteración de UI real de Procesos). No se agregó a la navegación inferior — se llega solo tocando la tarjeta desde Inicio, para no ampliar el menú principal sin que estuviera pedido.
+
+**Cambio de estado en `App()`:** se guarda el array completo de `procesos` (antes solo se guardaba el conteo) — uso de UI, no cambio de arquitectura; sigue siendo una sola llamada a `ProcesoService.listAll()`, ya existente.
+
+**Compatibilidad:** total. `StorageService`, `ProcesoService`, `i18n.js`, `ValidationService`, `ReferentialIntegrityService`: sin ninguna modificación.
