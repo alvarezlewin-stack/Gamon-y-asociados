@@ -123,7 +123,7 @@ function App() {
     const [clients, setClients] = useState([]);
     const [events, setEvents] = useState([]);
     const [notes, setNotes] = useState([]);
-    const [procesosActivos, setProcesosActivos] = useState(0);
+    const [procesos, setProcesos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [tab, setTab] = useState("inicio");
     const [showAddEvent, setShowAddEvent] = useState(false);
@@ -147,7 +147,7 @@ function App() {
                 setClients(loadedClients);
                 setEvents(loadedEvents);
                 setNotes(loadedNotes);
-                setProcesosActivos(loadedProcesos.length);
+                setProcesos(loadedProcesos);
             })
             .catch(() => { if (!cancelled) setSaveError(true); })
             .finally(() => { if (!cancelled) setLoading(false); });
@@ -215,14 +215,10 @@ function App() {
             React.createElement("img", { src: "logo.jpg", alt: "Gam\u00F3n & Asociados", className: "h-14 object-contain" })));
     }
     return (React.createElement("div", { className: "min-h-screen flex flex-col", style: { background: "var(--bg)", fontFamily: "'Public Sans', sans-serif" } },
-        React.createElement("header", { className: "px-5 pt-4 pb-4 sticky top-0 z-30 flex flex-col items-center", style: { background: "#000000", borderBottom: "1px solid var(--hairline)" } },
-            React.createElement("span", { className: "eyebrow", style: { color: "var(--gold-bright)" } }, "LEXFLOW\u2122"),
-            React.createElement("img", { src: "logo.jpg", alt: "Gam\u00F3n & Asociados", className: "h-14 object-contain rounded-md mt-2" }),
-            React.createElement("p", { style: { color: "var(--text)", fontFamily: "'Fraunces', serif", fontStyle: "italic", fontWeight: 500 }, className: "text-[15px] tracking-wide mt-2" }, I18N.construirSaludoCompleto()),
-            React.createElement("p", { style: { color: "var(--gold)", fontFamily: "'IBM Plex Mono', monospace" }, className: "text-[11px] tracking-wide mt-1 capitalize" }, new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })),
-            saveError && React.createElement("p", { className: "text-[11px] mt-2", style: { color: "#E0917D" } }, "No se pudo guardar. El almacenamiento del celular puede estar lleno.")),
+        React.createElement(HeaderFragment, { saveError: saveError }),
         React.createElement("main", { className: "flex-1 px-4 pt-5 pb-24 max-w-xl w-full mx-auto" },
-            tab === "inicio" && React.createElement(InicioTab, { clients: clients, eventsByDay: eventsByDay, vencimientos: vencimientos, procesosActivos: procesosActivos, onToggleDone: toggleEventDone, onGoTab: setTab }),
+            tab === "inicio" && React.createElement(InicioTab, { clients: clients, eventsByDay: eventsByDay, vencimientos: vencimientos, procesosActivos: procesos.length, onToggleDone: toggleEventDone, onGoTab: setTab }),
+            tab === "procesos" && React.createElement(ProcesosTab, { procesos: procesos, onBack: () => setTab("inicio") }),
             tab === "agenda" && React.createElement(AgendaTab, { eventsByDay: eventsByDay, clientById: clientById, onToggleDone: toggleEventDone, onDelete: deleteEvent }),
             tab === "clientes" && !selectedClient && React.createElement(ClientesTab, { clients: filteredClients, search: search, setSearch: setSearch, events: events, onSelect: setSelectedClient }),
             tab === "clientes" && selectedClient && (React.createElement(ClienteDetail, { client: selectedClient, events: events.filter((e) => e.clienteId === selectedClient.id), notes: notes.filter((n) => n.clienteId === selectedClient.id), onBack: () => setSelectedClient(null), onDeleteClient: deleteClient, onToggleDone: toggleEventDone, onDeleteEvent: deleteEvent, onDeleteNote: deleteNote })),
@@ -249,38 +245,64 @@ function App() {
         showAddNote && React.createElement(AddNoteModal, { clients: clients, onClose: () => setShowAddNote(false), onSave: (n) => { addNote(n); setShowAddNote(false); } })));
 }
 // ---------- Tabs ----------
-// ---------- Centro de Inicio (lexflow-design-system.html, DESIGN-HANDOFF.md sección 7) ----------
-// Datos reales, sin nada ficticio: Audiencias hoy y Vencimientos vienen de Agenda/Vencimientos
-// (ya en uso real); Procesos activos viene de ProcesoService. No incluye "Tareas" ni "Alertas"
-// porque esos módulos todavía no existen — mostrar un número inventado sería mentirle al usuario.
+// ---------- Header (compacto) ----------
+function HeaderFragment({ saveError }) {
+    const fechaCruda = new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    const fecha = fechaCruda.replace(",", "");
+    const fechaCapitalizada = fecha.charAt(0).toUpperCase() + fecha.slice(1);
+    // Temporal: nombre fijo hasta que exista la pantalla de Configuración con perfil real.
+    // No se toca i18n.js — se usa su función de hora (ya existente) y se agrega el nombre acá.
+    const saludo = I18N.saludoSegunHora(new Date().getHours()) + ", Doctora Lourdes";
+    return (React.createElement("header", { className: "px-5 pt-3 pb-3 sticky top-0 z-30 flex flex-col items-center", style: { background: "#000000", borderBottom: "1px solid var(--hairline)" } },
+        React.createElement("span", { className: "eyebrow", style: { color: "var(--gold-bright)" } }, "LEXFLOW\u2122"),
+        React.createElement("img", { src: "logo.jpg", alt: "Gam\u00F3n & Asociados", className: "h-10 object-contain rounded-md mt-1.5" }),
+        React.createElement("p", { style: { color: "var(--text)", fontFamily: "'Fraunces', serif", fontStyle: "italic", fontWeight: 500 }, className: "text-[15px] tracking-wide mt-1.5" }, saludo),
+        React.createElement("p", { style: { color: "var(--gold)", fontFamily: "'IBM Plex Mono', monospace" }, className: "text-[11px] tracking-wide mt-0.5" }, fechaCapitalizada),
+        saveError && React.createElement("p", { className: "text-[11px] mt-2", style: { color: "#E0917D" } }, "No se pudo guardar. El almacenamiento del celular puede estar lleno.")));
+}
+// ---------- Centro de Inicio v2: tarjetas como accesos rápidos táctiles ----------
+function AccesoRapido({ icon, label, value, color, onClick }) {
+    return (React.createElement("button", { onClick: onClick, className: "lf-card p-4 text-left active:scale-[0.96] transition-transform duration-100", style: { WebkitTapHighlightColor: "transparent" } },
+        React.createElement("div", { className: "flex items-center justify-between mb-2" },
+            React.createElement(Icon, { name: icon, size: 16, color: color }),
+            React.createElement(Icon, { name: "chevronRight", size: 14, color: "var(--text-faint, #5B616B)" })),
+        React.createElement("p", { className: "text-3xl", style: { fontFamily: "'Fraunces', serif", color: color } }, value),
+        React.createElement("p", { className: "eyebrow mt-1" }, label)));
+}
 function InicioTab({ clients, eventsByDay, vencimientos, procesosActivos, onToggleDone, onGoTab }) {
     const hoyISO = todayISO();
     const eventosHoy = eventsByDay[hoyISO] || [];
     const proximosVencimientos = vencimientos.slice(0, 3);
     return (React.createElement("div", null,
-        React.createElement("div", { className: "grid grid-cols-2 gap-3 mb-6" },
-            React.createElement("div", { className: "lf-card p-4" },
-                React.createElement("p", { className: "eyebrow mb-1" }, "Audiencias hoy"),
-                React.createElement("p", { className: "text-3xl", style: { fontFamily: "'Fraunces', serif", color: "var(--text)" } }, eventosHoy.length)),
-            React.createElement("div", { className: "lf-card p-4" },
-                React.createElement("p", { className: "eyebrow mb-1" }, "Vencimientos \u00B7 7 d\u00EDas"),
-                React.createElement("p", { className: "text-3xl", style: { fontFamily: "'Fraunces', serif", color: "var(--text)" } }, vencimientos.length)),
-            React.createElement("div", { className: "lf-card p-4" },
-                React.createElement("p", { className: "eyebrow mb-1" }, "Procesos activos"),
-                React.createElement("p", { className: "text-3xl", style: { fontFamily: "'Fraunces', serif", color: "var(--gold)" } }, procesosActivos)),
-            React.createElement("div", { className: "lf-card p-4" },
-                React.createElement("p", { className: "eyebrow mb-1" }, "Clientes"),
-                React.createElement("p", { className: "text-3xl", style: { fontFamily: "'Fraunces', serif", color: "var(--text)" } }, clients.length))),
+        React.createElement("div", { className: "grid grid-cols-2 gap-3 mb-5" },
+            React.createElement(AccesoRapido, { icon: "calendar", label: "Audiencias hoy", value: eventosHoy.length, color: "var(--text)", onClick: () => onGoTab("agenda") }),
+            React.createElement(AccesoRapido, { icon: "alertTriangle", label: "Vencimientos \u00B7 7 d\u00EDas", value: vencimientos.length, color: "var(--danger)", onClick: () => onGoTab("vencimientos") }),
+            React.createElement(AccesoRapido, { icon: "scale", label: "Procesos activos", value: procesosActivos, color: "var(--gold)", onClick: () => onGoTab("procesos") }),
+            React.createElement(AccesoRapido, { icon: "users", label: "Clientes", value: clients.length, color: "var(--text)", onClick: () => onGoTab("clientes") })),
         React.createElement("div", { className: "flex items-center justify-between mb-2 px-1" },
-            React.createElement("h3", { style: { fontFamily: "'Fraunces', serif", color: "var(--text)" }, className: "font-semibold" }, "Agenda de hoy"),
-            React.createElement("button", { onClick: () => onGoTab("agenda"), className: "text-xs", style: { color: "var(--gold)" } }, "Ver agenda completa \u2192")),
-        eventosHoy.length === 0 ? (React.createElement("div", { className: "lf-card p-5 mb-6 text-center" },
-            React.createElement("p", { className: "text-sm", style: { color: "var(--text-dim, #8B929E)" } }, "Sin audiencias ni eventos para hoy."))) : (React.createElement("div", { className: "space-y-2.5 mb-6" }, eventosHoy.map((ev) => React.createElement(EventCard, { key: ev.id, event: ev, client: clients.find((c) => c.id === ev.clienteId), onToggleDone: onToggleDone, onDelete: () => { } })))),
+            React.createElement("h3", { style: { fontFamily: "'Fraunces', serif", color: "var(--text)" }, className: "font-semibold text-sm" }, "Agenda de hoy")),
+        eventosHoy.length === 0 ? (React.createElement("div", { className: "lf-card p-4 mb-5 text-center" },
+            React.createElement("p", { className: "text-sm", style: { color: "var(--text-dim, #8B929E)" } }, "Sin audiencias ni eventos para hoy."))) : (React.createElement("div", { className: "space-y-2 mb-5" }, eventosHoy.map((ev) => React.createElement(EventCard, { key: ev.id, event: ev, client: clients.find((c) => c.id === ev.clienteId), onToggleDone: onToggleDone, onDelete: () => { } })))),
         React.createElement("div", { className: "flex items-center justify-between mb-2 px-1" },
-            React.createElement("h3", { style: { fontFamily: "'Fraunces', serif", color: "var(--text)" }, className: "font-semibold" }, "Pr\u00F3ximos vencimientos"),
-            React.createElement("button", { onClick: () => onGoTab("vencimientos"), className: "text-xs", style: { color: "var(--gold)" } }, "Ver todos \u2192")),
-        proximosVencimientos.length === 0 ? (React.createElement("div", { className: "lf-card p-5 text-center" },
-            React.createElement("p", { className: "text-sm", style: { color: "var(--text-dim, #8B929E)" } }, "Sin vencimientos pr\u00F3ximos."))) : (React.createElement("div", { className: "space-y-2.5" }, proximosVencimientos.map((ev) => React.createElement(EventCard, { key: ev.id, event: ev, client: clients.find((c) => c.id === ev.clienteId), onToggleDone: onToggleDone, onDelete: () => { } }))))));
+            React.createElement("h3", { style: { fontFamily: "'Fraunces', serif", color: "var(--text)" }, className: "font-semibold text-sm" }, "Pr\u00F3ximos vencimientos")),
+        proximosVencimientos.length === 0 ? (React.createElement("div", { className: "lf-card p-4 text-center" },
+            React.createElement("p", { className: "text-sm", style: { color: "var(--text-dim, #8B929E)" } }, "Sin vencimientos pr\u00F3ximos."))) : (React.createElement("div", { className: "space-y-2" }, proximosVencimientos.map((ev) => React.createElement(EventCard, { key: ev.id, event: ev, client: clients.find((c) => c.id === ev.clienteId), onToggleDone: onToggleDone, onDelete: () => { } }))))));
+}
+// ---------- Procesos: pantalla mínima, honesta (sin datos inventados) ----------
+function ProcesosTab({ procesos, onBack }) {
+    return (React.createElement("div", null,
+        React.createElement("button", { onClick: onBack, className: "flex items-center gap-1.5 mb-4", style: { color: "var(--text-dim, #8B929E)" } },
+            React.createElement(Icon, { name: "arrowLeft", size: 16 }),
+            React.createElement("span", { className: "text-sm" }, "Inicio")),
+        React.createElement("h2", { style: { fontFamily: "'Fraunces', serif", color: "var(--text)" }, className: "text-xl font-semibold mb-4" }, "Procesos"),
+        procesos.length === 0 ? (React.createElement(EmptyState, { icon: "scale", title: "Sin procesos cargados", hint: "La pantalla de alta de procesos todav\u00EDa no est\u00E1 construida \u2014 pr\u00F3xima iteraci\u00F3n." })) : (React.createElement("div", { className: "space-y-2.5" }, procesos.map((p) => (React.createElement("div", { key: p.id, className: "lf-card p-4" },
+            React.createElement("p", { style: { fontFamily: "'IBM Plex Mono', monospace", color: "var(--gold)" }, className: "text-xs mb-1" }, p.nurej ? "NUREJ " + p.nurej : "Sin NUREJ asignado"),
+            React.createElement("p", { style: { color: "var(--text)" }, className: "text-sm" },
+                "Inicio: ",
+                p.fechaInicio || "—"),
+            React.createElement("p", { style: { color: "var(--text-dim, #8B929E)" }, className: "text-xs mt-1" },
+                "Prioridad: ",
+                p.prioridad || "MEDIUM"))))))));
 }
 function AgendaTab({ eventsByDay, clientById, onToggleDone, onDelete }) {
     const days = Object.keys(eventsByDay).sort();
