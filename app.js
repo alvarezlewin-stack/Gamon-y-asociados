@@ -119,46 +119,59 @@ const inputStyle = {
     background: "var(--bg)", color: "var(--text)", fontFamily: "'Public Sans', sans-serif", fontSize: 15, outline: "none",
 };
 // ---------- App principal ----------
+// ---------- App principal ----------
 function App() {
     const [clients, setClients] = useState([]);
     const [events, setEvents] = useState([]);
     const [notes, setNotes] = useState([]);
     const [procesos, setProcesos] = useState([]);
+    const [materias, setMaterias] = useState([]);
+    const [instituciones, setInstituciones] = useState([]);
+    const [estadosProcesales, setEstadosProcesales] = useState([]);
     const [loading, setLoading] = useState(true);
     const [tab, setTab] = useState("inicio");
     const [showAddEvent, setShowAddEvent] = useState(false);
     const [showAddClient, setShowAddClient] = useState(false);
     const [showAddNote, setShowAddNote] = useState(false);
+    const [showAddProceso, setShowAddProceso] = useState(false);
     const [selectedClient, setSelectedClient] = useState(null);
     const [search, setSearch] = useState("");
     const [saveError, setSaveError] = useState(false);
-
     useEffect(() => {
         let cancelled = false;
         StorageService.init()
             .then(() => Promise.all([
-                StorageService.getAll("clients"),
-                StorageService.getAll("events"),
-                StorageService.getAll("notes"),
-                ProcesoService.listAll(),
-            ]))
-            .then(([loadedClients, loadedEvents, loadedNotes, loadedProcesos]) => {
-                if (cancelled) return;
-                setClients(loadedClients);
-                setEvents(loadedEvents);
-                setNotes(loadedNotes);
-                setProcesos(loadedProcesos);
-            })
-            .catch(() => { if (!cancelled) setSaveError(true); })
-            .finally(() => { if (!cancelled) setLoading(false); });
+            StorageService.getAll("clients"),
+            StorageService.getAll("events"),
+            StorageService.getAll("notes"),
+            ProcesoService.listAll(),
+            StorageService.getAll("materias"),
+            InstitutionService.listAll(),
+            StorageService.getAll("estados_procesales"),
+        ]))
+            .then(([loadedClients, loadedEvents, loadedNotes, loadedProcesos, loadedMaterias, loadedInstituciones, loadedEstados]) => {
+            if (cancelled)
+                return;
+            setClients(loadedClients);
+            setEvents(loadedEvents);
+            setNotes(loadedNotes);
+            setProcesos(loadedProcesos);
+            setMaterias(loadedMaterias.filter((m) => m.activo));
+            setInstituciones(loadedInstituciones);
+            setEstadosProcesales(loadedEstados.filter((e) => e.activo));
+        })
+            .catch(() => { if (!cancelled)
+            setSaveError(true); })
+            .finally(() => { if (!cancelled)
+            setLoading(false); });
         return () => { cancelled = true; };
     }, []);
-
     function addClient(client) {
         const record = Object.assign(Object.assign({}, client), { id: uid(), createdAt: todayISO() });
         StorageService.put("clients", record)
             .then(() => setClients((prev) => [...prev, record]))
             .catch(() => setSaveError(true));
+        return record;
     }
     function deleteClient(id) {
         StorageService.remove("clients", id)
@@ -174,7 +187,8 @@ function App() {
     }
     function toggleEventDone(id) {
         const target = events.find((e) => e.id === id);
-        if (!target) return;
+        if (!target)
+            return;
         const updated = Object.assign(Object.assign({}, target), { done: !target.done });
         StorageService.put("events", updated)
             .then(() => setEvents((prev) => prev.map((e) => (e.id === id ? updated : e))))
@@ -186,7 +200,7 @@ function App() {
             .catch(() => setSaveError(true));
     }
     function addNote(note) {
-        const record = Object.assign(Object.assign({}, note), { id: uid(), createdAt: todayISO() });
+        const record = Object.assign(Object.assign({ tipo: "general", procesoId: null }, note), { id: uid(), createdAt: todayISO() });
         StorageService.put("notes", record)
             .then(() => setNotes((prev) => [...prev, record]))
             .catch(() => setSaveError(true));
@@ -195,6 +209,36 @@ function App() {
         StorageService.remove("notes", id)
             .then(() => setNotes((prev) => prev.filter((n) => n.id !== id)))
             .catch(() => setSaveError(true));
+    }
+    // Alta de institución mínima e inline (usa InstitutionService existente, sin servicio nuevo).
+    function addInstitucionInline(data) {
+        return InstitutionService.create(data).then((record) => {
+            setInstituciones((prev) => [...prev, record]);
+            return record;
+        });
+    }
+    // Alta de proceso completa: si el cliente es nuevo, primero se persiste (await real,
+    // para que exista en la base antes de que ProcesoService valide la referencia),
+    // recién después se crea el Proceso con su primera ProcesoParte. Usa exclusivamente
+    // ProcesoService.createProcesoCompleto ya existente — ningún servicio nuevo.
+    function crearProcesoConParte({ nurej, materiaId, institucionId, observaciones, clienteId, clienteNuevoNombre }) {
+        const estadoInicial = estadosProcesales[0];
+        const procesoData = {
+            nurej: nurej || "",
+            materiaId,
+            institucionId,
+            estadoProcesalId: estadoInicial ? estadoInicial.id : null,
+            fechaInicio: todayISO(),
+            observaciones: observaciones || "",
+        };
+        const obtenerClienteId = clienteNuevoNombre && clienteNuevoNombre.trim()
+            ? StorageService.put("clients", { id: uid(), nombre: clienteNuevoNombre.trim(), expediente: "", contacto: "", notas: "", createdAt: todayISO() })
+                .then((nuevoCliente) => { setClients((prev) => [...prev, nuevoCliente]); return nuevoCliente.id; })
+            : Promise.resolve(clienteId);
+        return obtenerClienteId.then((clienteIdFinal) => ProcesoService.createProcesoCompleto(procesoData, [{ clienteId: clienteIdFinal, rolProcesal: "Cliente" }])).then((resultado) => {
+            setProcesos((prev) => [...prev, resultado.proceso]);
+            return resultado;
+        });
     }
     const clientById = (id) => clients.find((c) => c.id === id);
     const upcomingEvents = useMemo(() => [...events].filter((e) => !e.done).sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || ""))), [events]);
@@ -214,37 +258,46 @@ function App() {
         return (React.createElement("div", { className: "min-h-screen flex items-center justify-center", style: { background: "var(--bg)" } },
             React.createElement("img", { src: "logo.jpg", alt: "Gam\u00F3n & Asociados", className: "h-14 object-contain" })));
     }
+    // FAB contextual: cada pestaña abre su propio alta, nunca "Nuevo evento" por defecto.
+    const fabConfig = {
+        agenda: { onClick: () => setShowAddEvent(true) },
+        clientes: { onClick: () => setShowAddClient(true) },
+        procesos: { onClick: () => setShowAddProceso(true) },
+        notas: { onClick: () => setShowAddNote(true) },
+        vencimientos: { onClick: () => setShowAddEvent({ presetTipo: "vencimiento" }) },
+    };
+    const fabVisible = tab !== "inicio" && !(tab === "clientes" && selectedClient) && fabConfig[tab];
     return (React.createElement("div", { className: "min-h-screen flex flex-col", style: { background: "var(--bg)", fontFamily: "'Public Sans', sans-serif" } },
         React.createElement(HeaderFragment, { saveError: saveError }),
         React.createElement("main", { className: "flex-1 px-4 pt-5 pb-24 max-w-xl w-full mx-auto" },
             tab === "inicio" && React.createElement(InicioTab, { clients: clients, eventsByDay: eventsByDay, vencimientos: vencimientos, procesosActivos: procesos.length, onToggleDone: toggleEventDone, onGoTab: setTab }),
-            tab === "procesos" && React.createElement(ProcesosTab, { procesos: procesos, onBack: () => setTab("inicio") }),
+            tab === "procesos" && React.createElement(ProcesosTab, { procesos: procesos, materias: materias, estadosProcesales: estadosProcesales, onBack: () => setTab("inicio") }),
             tab === "agenda" && React.createElement(AgendaTab, { eventsByDay: eventsByDay, clientById: clientById, onToggleDone: toggleEventDone, onDelete: deleteEvent }),
             tab === "clientes" && !selectedClient && React.createElement(ClientesTab, { clients: filteredClients, search: search, setSearch: setSearch, events: events, onSelect: setSelectedClient }),
             tab === "clientes" && selectedClient && (React.createElement(ClienteDetail, { client: selectedClient, events: events.filter((e) => e.clienteId === selectedClient.id), notes: notes.filter((n) => n.clienteId === selectedClient.id), onBack: () => setSelectedClient(null), onDeleteClient: deleteClient, onToggleDone: toggleEventDone, onDeleteEvent: deleteEvent, onDeleteNote: deleteNote })),
             tab === "vencimientos" && (React.createElement(VencimientosTab, { vencimientos: vencimientos, clientById: clientById, onToggleDone: toggleEventDone, onAddCalculated: (date, label) => setShowAddEvent({ presetDate: date, presetTitle: label, presetTipo: "vencimiento" }) })),
-            tab === "notas" && React.createElement(NotasTab, { notes: notes, clientById: clientById, onDelete: deleteNote })),
-        React.createElement("button", { onClick: () => { if (tab === "clientes")
-                setShowAddClient(true);
-            else if (tab === "notas")
-                setShowAddNote(true);
-            else
-                setShowAddEvent(true); }, className: "fixed bottom-20 right-5 w-14 h-14 rounded-full flex items-center justify-center shadow-lg z-30", style: { background: "var(--gold)" }, "aria-label": "Agregar" },
-            React.createElement(Icon, { name: "plus", size: 26, color: "var(--bg)", strokeWidth: 2.5 })),
-        React.createElement("nav", { className: "fixed bottom-0 left-0 right-0 flex justify-around items-center py-2.5 z-30 border-t", style: { background: "var(--card)", borderColor: "var(--hairline)" } }, [
+            tab === "notas" && React.createElement(NotasTab, { notes: notes, clientById: clientById, procesos: procesos, onDelete: deleteNote })),
+        fabVisible && (React.createElement("button", { onClick: fabConfig[tab].onClick, className: "fixed bottom-20 right-5 w-14 h-14 rounded-full flex items-center justify-center shadow-lg z-30 active:scale-95 transition-transform", style: { background: "var(--gold)" }, "aria-label": "Agregar" },
+            React.createElement(Icon, { name: "plus", size: 26, color: "var(--bg)", strokeWidth: 2.5 }))),
+        React.createElement("nav", { className: "fixed bottom-0 left-0 right-0 flex justify-around items-center py-2 z-30 border-t", style: { background: "var(--card)", borderColor: "var(--hairline)" } }, [
             { id: "inicio", label: "Inicio", icon: "home" },
+            { id: "procesos", label: "Procesos", icon: "scale" },
             { id: "agenda", label: "Agenda", icon: "calendar" },
             { id: "clientes", label: "Clientes", icon: "briefcase" },
-            { id: "vencimientos", label: "Vencimientos", icon: "alertTriangle" },
+            { id: "vencimientos", label: "Vencim.", icon: "alertTriangle" },
             { id: "notas", label: "Notas", icon: "stickyNote" },
-        ].map(({ id, label, icon }) => (React.createElement("button", { key: id, onClick: () => { setTab(id); setSelectedClient(null); }, className: "flex flex-col items-center gap-1 px-3 py-1" },
-            React.createElement(Icon, { name: icon, size: 20, color: tab === id ? "var(--gold)" : "#ECEDEF70", strokeWidth: tab === id ? 2.3 : 1.8 }),
-            React.createElement("span", { className: "text-[10px] font-medium", style: { color: tab === id ? "var(--gold)" : "#ECEDEF70" } }, label))))),
+        ].map(({ id, label, icon }) => (React.createElement("button", { key: id, onClick: () => { setTab(id); setSelectedClient(null); }, className: "flex flex-col items-center gap-1 px-2 py-1" },
+            React.createElement(Icon, { name: icon, size: 19, color: tab === id ? "var(--gold)" : "#ECEDEF70", strokeWidth: tab === id ? 2.3 : 1.8 }),
+            React.createElement("span", { className: "text-[9.5px] font-medium", style: { color: tab === id ? "var(--gold)" : "#ECEDEF70" } }, label))))),
         showAddEvent && React.createElement(AddEventModal, { clients: clients, preset: typeof showAddEvent === "object" ? showAddEvent : null, onClose: () => setShowAddEvent(false), onSave: (ev) => { addEvent(ev); setShowAddEvent(false); } }),
         showAddClient && React.createElement(AddClientModal, { onClose: () => setShowAddClient(false), onSave: (c) => { addClient(c); setShowAddClient(false); } }),
-        showAddNote && React.createElement(AddNoteModal, { clients: clients, onClose: () => setShowAddNote(false), onSave: (n) => { addNote(n); setShowAddNote(false); } })));
+        showAddNote && React.createElement(AddNoteModal, { clients: clients, procesos: procesos, onClose: () => setShowAddNote(false), onSave: (n) => { addNote(n); setShowAddNote(false); } }),
+        showAddProceso && (React.createElement(AddProcesoModal, { clients: clients, materias: materias, instituciones: instituciones, onClose: () => setShowAddProceso(false), onCreateInstitucion: addInstitucionInline, onSave: (data) => {
+                crearProcesoConParte(data)
+                    .then(() => setShowAddProceso(false))
+                    .catch((err) => window.alert((err && err.validacion && err.validacion.errores || ["No se pudo crear el proceso."]).join("\n")));
+            } }))));
 }
-// ---------- Tabs ----------
 // ---------- Header (compacto) ----------
 function HeaderFragment({ saveError }) {
     const fechaCruda = new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
@@ -252,7 +305,7 @@ function HeaderFragment({ saveError }) {
     const fechaCapitalizada = fecha.charAt(0).toUpperCase() + fecha.slice(1);
     // Temporal: nombre fijo hasta que exista la pantalla de Configuración con perfil real.
     // No se toca i18n.js — se usa su función de hora (ya existente) y se agrega el nombre acá.
-    const saludo = I18N.saludoSegunHora(new Date().getHours()) + ", Doctora Lourdes";
+    const saludo = I18N.saludoSegunHora(new Date().getHours()) + ", Doctora Lourdes.";
     return (React.createElement("header", { className: "px-5 pt-3 pb-3 sticky top-0 z-30 flex flex-col items-center", style: { background: "#000000", borderBottom: "1px solid var(--hairline)" } },
         React.createElement("span", { className: "eyebrow", style: { color: "var(--gold-bright)" } }, "LEXFLOW\u2122"),
         React.createElement("img", { src: "logo.jpg", alt: "Gam\u00F3n & Asociados", className: "h-10 object-contain rounded-md mt-1.5" }),
@@ -260,13 +313,13 @@ function HeaderFragment({ saveError }) {
         React.createElement("p", { style: { color: "var(--gold)", fontFamily: "'IBM Plex Mono', monospace" }, className: "text-[11px] tracking-wide mt-0.5" }, fechaCapitalizada),
         saveError && React.createElement("p", { className: "text-[11px] mt-2", style: { color: "#E0917D" } }, "No se pudo guardar. El almacenamiento del celular puede estar lleno.")));
 }
-// ---------- Centro de Inicio v2: tarjetas como accesos rápidos táctiles ----------
-function AccesoRapido({ icon, label, value, color, onClick }) {
-    return (React.createElement("button", { onClick: onClick, className: "lf-card p-4 text-left active:scale-[0.96] transition-transform duration-100", style: { WebkitTapHighlightColor: "transparent" } },
+// ---------- Centro de Inicio v3: "Audiencias hoy" con mayor jerarquía visual ----------
+function AccesoRapido({ icon, label, value, color, onClick, grande }) {
+    return (React.createElement("button", { onClick: onClick, className: "lf-card text-left active:scale-[0.96] transition-transform duration-100 " + (grande ? "p-5" : "p-4"), style: { WebkitTapHighlightColor: "transparent" } },
         React.createElement("div", { className: "flex items-center justify-between mb-2" },
-            React.createElement(Icon, { name: icon, size: 16, color: color }),
-            React.createElement(Icon, { name: "chevronRight", size: 14, color: "var(--text-faint, #5B616B)" })),
-        React.createElement("p", { className: "text-3xl", style: { fontFamily: "'Fraunces', serif", color: color } }, value),
+            React.createElement(Icon, { name: icon, size: grande ? 20 : 16, color: color }),
+            React.createElement(Icon, { name: "chevronRight", size: grande ? 16 : 14, color: "var(--text-faint, #5B616B)" })),
+        React.createElement("p", { className: grande ? "text-5xl" : "text-3xl", style: { fontFamily: "'Fraunces', serif", color: color } }, value),
         React.createElement("p", { className: "eyebrow mt-1" }, label)));
 }
 function InicioTab({ clients, eventsByDay, vencimientos, procesosActivos, onToggleDone, onGoTab }) {
@@ -274,35 +327,161 @@ function InicioTab({ clients, eventsByDay, vencimientos, procesosActivos, onTogg
     const eventosHoy = eventsByDay[hoyISO] || [];
     const proximosVencimientos = vencimientos.slice(0, 3);
     return (React.createElement("div", null,
-        React.createElement("div", { className: "grid grid-cols-2 gap-3 mb-5" },
-            React.createElement(AccesoRapido, { icon: "calendar", label: "Audiencias hoy", value: eventosHoy.length, color: "var(--text)", onClick: () => onGoTab("agenda") }),
-            React.createElement(AccesoRapido, { icon: "alertTriangle", label: "Vencimientos \u00B7 7 d\u00EDas", value: vencimientos.length, color: "var(--danger)", onClick: () => onGoTab("vencimientos") }),
-            React.createElement(AccesoRapido, { icon: "scale", label: "Procesos activos", value: procesosActivos, color: "var(--gold)", onClick: () => onGoTab("procesos") }),
+        React.createElement("div", { className: "mb-3" },
+            React.createElement(AccesoRapido, { grande: true, icon: "calendar", label: "Audiencias hoy", value: eventosHoy.length, color: "var(--gold-bright)", onClick: () => onGoTab("agenda") })),
+        React.createElement("div", { className: "grid grid-cols-3 gap-2.5 mb-5" },
+            React.createElement(AccesoRapido, { icon: "alertTriangle", label: "Venc. 7 d\u00EDas", value: vencimientos.length, color: "var(--danger)", onClick: () => onGoTab("vencimientos") }),
+            React.createElement(AccesoRapido, { icon: "scale", label: "Procesos", value: procesosActivos, color: "var(--gold)", onClick: () => onGoTab("procesos") }),
             React.createElement(AccesoRapido, { icon: "users", label: "Clientes", value: clients.length, color: "var(--text)", onClick: () => onGoTab("clientes") })),
-        React.createElement("div", { className: "flex items-center justify-between mb-2 px-1" },
-            React.createElement("h3", { style: { fontFamily: "'Fraunces', serif", color: "var(--text)" }, className: "font-semibold text-sm" }, "Agenda de hoy")),
+        React.createElement("h3", { style: { fontFamily: "'Fraunces', serif", color: "var(--text)" }, className: "font-semibold text-sm mb-2 px-1" }, "Agenda de hoy"),
         eventosHoy.length === 0 ? (React.createElement("div", { className: "lf-card p-4 mb-5 text-center" },
             React.createElement("p", { className: "text-sm", style: { color: "var(--text-dim, #8B929E)" } }, "Sin audiencias ni eventos para hoy."))) : (React.createElement("div", { className: "space-y-2 mb-5" }, eventosHoy.map((ev) => React.createElement(EventCard, { key: ev.id, event: ev, client: clients.find((c) => c.id === ev.clienteId), onToggleDone: onToggleDone, onDelete: () => { } })))),
-        React.createElement("div", { className: "flex items-center justify-between mb-2 px-1" },
-            React.createElement("h3", { style: { fontFamily: "'Fraunces', serif", color: "var(--text)" }, className: "font-semibold text-sm" }, "Pr\u00F3ximos vencimientos")),
+        React.createElement("h3", { style: { fontFamily: "'Fraunces', serif", color: "var(--text)" }, className: "font-semibold text-sm mb-2 px-1" }, "Vencimientos cr\u00EDticos"),
         proximosVencimientos.length === 0 ? (React.createElement("div", { className: "lf-card p-4 text-center" },
             React.createElement("p", { className: "text-sm", style: { color: "var(--text-dim, #8B929E)" } }, "Sin vencimientos pr\u00F3ximos."))) : (React.createElement("div", { className: "space-y-2" }, proximosVencimientos.map((ev) => React.createElement(EventCard, { key: ev.id, event: ev, client: clients.find((c) => c.id === ev.clienteId), onToggleDone: onToggleDone, onDelete: () => { } }))))));
 }
-// ---------- Procesos: pantalla mínima, honesta (sin datos inventados) ----------
-function ProcesosTab({ procesos, onBack }) {
+// ---------- Procesos: listado con búsqueda y filtros reales (sobre datos ya cargados en memoria) ----------
+function ProcesosTab({ procesos, materias, estadosProcesales, onBack }) {
+    const [q, setQ] = useState("");
+    const [materiaFiltro, setMateriaFiltro] = useState("");
+    const [estadoFiltro, setEstadoFiltro] = useState("");
+    const materiaNombre = (id) => { const m = materias.find((x) => x.id === id); return m ? m.nombre : null; };
+    const estadoNombre = (id) => { const e = estadosProcesales.find((x) => x.id === id); return e ? e.nombre : null; };
+    const filtrados = useMemo(() => {
+        return procesos.filter((p) => {
+            if (materiaFiltro && p.materiaId !== materiaFiltro)
+                return false;
+            if (estadoFiltro && p.estadoProcesalId !== estadoFiltro)
+                return false;
+            if (q.trim()) {
+                const texto = ((p.nurej || "") + " " + (materiaNombre(p.materiaId) || "")).toLowerCase();
+                if (!texto.includes(q.trim().toLowerCase()))
+                    return false;
+            }
+            return true;
+        });
+    }, [procesos, materiaFiltro, estadoFiltro, q]);
     return (React.createElement("div", null,
         React.createElement("button", { onClick: onBack, className: "flex items-center gap-1.5 mb-4", style: { color: "var(--text-dim, #8B929E)" } },
             React.createElement(Icon, { name: "arrowLeft", size: 16 }),
             React.createElement("span", { className: "text-sm" }, "Inicio")),
         React.createElement("h2", { style: { fontFamily: "'Fraunces', serif", color: "var(--text)" }, className: "text-xl font-semibold mb-4" }, "Procesos"),
-        procesos.length === 0 ? (React.createElement(EmptyState, { icon: "scale", title: "Sin procesos cargados", hint: "La pantalla de alta de procesos todav\u00EDa no est\u00E1 construida \u2014 pr\u00F3xima iteraci\u00F3n." })) : (React.createElement("div", { className: "space-y-2.5" }, procesos.map((p) => (React.createElement("div", { key: p.id, className: "lf-card p-4" },
-            React.createElement("p", { style: { fontFamily: "'IBM Plex Mono', monospace", color: "var(--gold)" }, className: "text-xs mb-1" }, p.nurej ? "NUREJ " + p.nurej : "Sin NUREJ asignado"),
+        React.createElement("div", { className: "flex items-center gap-2 rounded-full px-4 py-2.5 mb-3", style: { background: "var(--card)", border: "1px solid var(--hairline-soft)" } },
+            React.createElement(Icon, { name: "search", size: 16, color: "#ECEDEF7A" }),
+            React.createElement("input", { value: q, onChange: (e) => setQ(e.target.value), placeholder: "Buscar por NUREJ o materia\u2026", className: "flex-1 bg-transparent outline-none text-sm", style: { color: "var(--text)" } })),
+        React.createElement("div", { className: "flex gap-2 mb-4" },
+            React.createElement("select", { value: materiaFiltro, onChange: (e) => setMateriaFiltro(e.target.value), style: Object.assign(Object.assign({}, inputStyle), { fontSize: 13, padding: "8px 10px" }) },
+                React.createElement("option", { value: "" }, "Todas las materias"),
+                materias.map((m) => React.createElement("option", { key: m.id, value: m.id }, m.nombre))),
+            React.createElement("select", { value: estadoFiltro, onChange: (e) => setEstadoFiltro(e.target.value), style: Object.assign(Object.assign({}, inputStyle), { fontSize: 13, padding: "8px 10px" }) },
+                React.createElement("option", { value: "" }, "Todos los estados"),
+                estadosProcesales.map((e) => React.createElement("option", { key: e.id, value: e.id }, e.nombre)))),
+        filtrados.length === 0 ? (React.createElement(EmptyState, { icon: "scale", title: procesos.length === 0 ? "Sin procesos cargados" : "Sin resultados", hint: procesos.length === 0 ? "Tocá + para cargar el primer proceso." : "Probá con otra búsqueda o filtro." })) : (React.createElement("div", { className: "space-y-2.5" }, filtrados.map((p) => (React.createElement("div", { key: p.id, className: "lf-card p-4" },
+            React.createElement("div", { className: "flex items-center justify-between mb-1" },
+                React.createElement("p", { style: { fontFamily: "'IBM Plex Mono', monospace", color: "var(--gold)" }, className: "text-xs" }, p.nurej ? "NUREJ " + p.nurej : "Sin NUREJ asignado"),
+                materiaNombre(p.materiaId) && React.createElement("span", { className: "text-[10px] font-semibold px-2 py-0.5 rounded-full", style: { background: "var(--gold-dim)", color: "var(--gold)" } }, materiaNombre(p.materiaId))),
             React.createElement("p", { style: { color: "var(--text)" }, className: "text-sm" },
                 "Inicio: ",
                 p.fechaInicio || "—"),
-            React.createElement("p", { style: { color: "var(--text-dim, #8B929E)" }, className: "text-xs mt-1" },
-                "Prioridad: ",
-                p.prioridad || "MEDIUM"))))))));
+            estadoNombre(p.estadoProcesalId) && React.createElement("p", { style: { color: "var(--text-dim, #8B929E)" }, className: "text-xs mt-1" }, estadoNombre(p.estadoProcesalId)))))))));
+}
+// ---------- Alta de Proceso (usa ProcesoService.createProcesoCompleto ya existente) ----------
+function AddProcesoModal({ clients, materias, instituciones, onClose, onSave, onCreateInstitucion }) {
+    const [nurej, setNurej] = useState("");
+    const [materiaId, setMateriaId] = useState("");
+    const [institucionId, setInstitucionId] = useState("");
+    const [observaciones, setObservaciones] = useState("");
+    const [clienteModo, setClienteModo] = useState("existente");
+    const [clienteId, setClienteId] = useState("");
+    const [clienteNuevoNombre, setClienteNuevoNombre] = useState("");
+    const [mostrarNuevaInstitucion, setMostrarNuevaInstitucion] = useState(false);
+    const [nuevaInstNombre, setNuevaInstNombre] = useState("");
+    const [tiposInstitucionCache, setTiposInstitucionCache] = useState(null);
+    useEffect(() => {
+        if (mostrarNuevaInstitucion && tiposInstitucionCache === null) {
+            StorageService.getAll("tipos_institucion").then((rows) => setTiposInstitucionCache(rows.filter((r) => r.activo)));
+        }
+    }, [mostrarNuevaInstitucion]);
+    function crearInstitucionRapida() {
+        if (!nuevaInstNombre.trim() || !tiposInstitucionCache || !tiposInstitucionCache[0])
+            return;
+        onCreateInstitucion({ nombre: nuevaInstNombre.trim(), tipoInstitucionId: tiposInstitucionCache[0].id }).then((record) => {
+            setInstitucionId(record.id);
+            setMostrarNuevaInstitucion(false);
+            setNuevaInstNombre("");
+        });
+    }
+    const clienteListo = clienteModo === "existente" ? !!clienteId : !!clienteNuevoNombre.trim();
+    const puedeGuardar = materiaId && institucionId && clienteListo;
+    return (React.createElement(Modal, { title: "Nuevo proceso", onClose: onClose },
+        React.createElement(Field, { label: "NUREJ (opcional)" },
+            React.createElement("input", { style: inputStyle, value: nurej, onChange: (e) => setNurej(e.target.value), placeholder: "Se puede completar m\u00E1s adelante" })),
+        React.createElement(Field, { label: "Materia" },
+            React.createElement("select", { style: inputStyle, value: materiaId, onChange: (e) => setMateriaId(e.target.value) },
+                React.createElement("option", { value: "" }, "Elegir materia\u2026"),
+                materias.map((m) => React.createElement("option", { key: m.id, value: m.id }, m.nombre)))),
+        React.createElement(Field, { label: "Juzgado / Fiscal\u00EDa" }, instituciones.length === 0 || mostrarNuevaInstitucion ? (React.createElement("div", null,
+            React.createElement("input", { style: inputStyle, value: nuevaInstNombre, onChange: (e) => setNuevaInstNombre(e.target.value), placeholder: "Ej: Juzgado P\u00FAblico Civil 3\u00B0" }),
+            React.createElement("button", { type: "button", onClick: crearInstitucionRapida, disabled: !nuevaInstNombre.trim(), className: "text-xs mt-2 disabled:opacity-40", style: { color: "var(--gold)" } }, "+ Guardar instituci\u00F3n"))) : (React.createElement("div", null,
+            React.createElement("select", { style: inputStyle, value: institucionId, onChange: (e) => setInstitucionId(e.target.value) },
+                React.createElement("option", { value: "" }, "Elegir instituci\u00F3n\u2026"),
+                instituciones.map((i) => React.createElement("option", { key: i.id, value: i.id }, i.nombre))),
+            React.createElement("button", { type: "button", onClick: () => setMostrarNuevaInstitucion(true), className: "text-xs mt-2", style: { color: "var(--gold)" } }, "+ Nueva instituci\u00F3n")))),
+        React.createElement(Field, { label: "Cliente" },
+            React.createElement("div", { className: "flex gap-2 mb-2" },
+                React.createElement("button", { type: "button", onClick: () => setClienteModo("existente"), className: "px-3 py-1.5 rounded-full text-xs font-medium", style: { background: clienteModo === "existente" ? "var(--gold)" : "#ECEDEF12", color: clienteModo === "existente" ? "var(--bg)" : "var(--text)" } }, "Cliente existente"),
+                React.createElement("button", { type: "button", onClick: () => setClienteModo("nuevo"), className: "px-3 py-1.5 rounded-full text-xs font-medium", style: { background: clienteModo === "nuevo" ? "var(--gold)" : "#ECEDEF12", color: clienteModo === "nuevo" ? "var(--bg)" : "var(--text)" } }, "Crear cliente nuevo")),
+            clienteModo === "existente" ? (React.createElement("select", { style: inputStyle, value: clienteId, onChange: (e) => setClienteId(e.target.value) },
+                React.createElement("option", { value: "" }, "Elegir cliente\u2026"),
+                clients.map((c) => React.createElement("option", { key: c.id, value: c.id }, c.nombre)))) : (React.createElement("input", { style: inputStyle, value: clienteNuevoNombre, onChange: (e) => setClienteNuevoNombre(e.target.value), placeholder: "Nombre completo del cliente nuevo" }))),
+        React.createElement(Field, { label: "Observaciones (opcional)" },
+            React.createElement("textarea", { style: Object.assign(Object.assign({}, inputStyle), { minHeight: 70 }), value: observaciones, onChange: (e) => setObservaciones(e.target.value) })),
+        React.createElement("button", { disabled: !puedeGuardar, onClick: () => onSave({ nurej: nurej.trim(), materiaId, institucionId, observaciones: observaciones.trim(), clienteId: clienteModo === "existente" ? clienteId : "", clienteNuevoNombre: clienteModo === "nuevo" ? clienteNuevoNombre : "" }), className: "w-full py-3 rounded-lg font-medium mt-2 disabled:opacity-40", style: { background: "var(--gold)", color: "var(--bg)" } }, "Guardar proceso")));
+}
+// ---------- Nota: general o Bitácora de proceso (mismo store "notes", sin romper compatibilidad) ----------
+function AddNoteModal({ clients, procesos, onClose, onSave }) {
+    const [texto, setTexto] = useState("");
+    const [clienteId, setClienteId] = useState("");
+    const [tipo, setTipo] = useState("general");
+    const [procesoId, setProcesoId] = useState("");
+    return (React.createElement(Modal, { title: "Nueva nota", onClose: onClose },
+        React.createElement(Field, { label: "Tipo" },
+            React.createElement("div", { className: "flex gap-2" },
+                React.createElement("button", { type: "button", onClick: () => setTipo("general"), className: "px-3 py-1.5 rounded-full text-xs font-medium", style: { background: tipo === "general" ? "var(--gold)" : "#ECEDEF12", color: tipo === "general" ? "var(--bg)" : "var(--text)" } }, "Nota general"),
+                React.createElement("button", { type: "button", onClick: () => setTipo("bitacora"), className: "px-3 py-1.5 rounded-full text-xs font-medium", style: { background: tipo === "bitacora" ? "var(--gold)" : "#ECEDEF12", color: tipo === "bitacora" ? "var(--bg)" : "var(--text)" } }, "Bit\u00E1cora de proceso"))),
+        tipo === "bitacora" && (React.createElement(Field, { label: "Proceso" },
+            React.createElement("select", { style: inputStyle, value: procesoId, onChange: (e) => setProcesoId(e.target.value) },
+                React.createElement("option", { value: "" }, "Elegir proceso\u2026"),
+                procesos.map((p) => React.createElement("option", { key: p.id, value: p.id }, p.nurej ? "NUREJ " + p.nurej : p.id.slice(0, 8)))))),
+        React.createElement(Field, { label: "Nota" },
+            React.createElement("textarea", { style: Object.assign(Object.assign({}, inputStyle), { minHeight: 90 }), value: texto, onChange: (e) => setTexto(e.target.value), placeholder: "Escrib\u00ED lo que necesit\u00E9s recordar\u2026" })),
+        tipo === "general" && (React.createElement(Field, { label: "Vincular a cliente (opcional)" },
+            React.createElement("select", { style: inputStyle, value: clienteId, onChange: (e) => setClienteId(e.target.value) },
+                React.createElement("option", { value: "" }, "Sin vincular"),
+                clients.map((c) => React.createElement("option", { key: c.id, value: c.id }, c.nombre))))),
+        React.createElement("button", { disabled: !texto.trim() || (tipo === "bitacora" && !procesoId), onClick: () => onSave({ texto: texto.trim(), clienteId: tipo === "general" ? (clienteId || null) : null, tipo, procesoId: tipo === "bitacora" ? procesoId : null }), className: "w-full py-3 rounded-lg font-medium mt-2 disabled:opacity-40", style: { background: "var(--gold)", color: "var(--bg)" } }, "Guardar nota")));
+}
+function NotasTab({ notes, clientById, procesos, onDelete }) {
+    const sorted = [...notes].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    if (sorted.length === 0)
+        return React.createElement(EmptyState, { icon: "stickyNote", title: "Sin notas", hint: "Toc\u00E1 + para dejar una nota r\u00E1pida, general o de bit\u00E1cora." });
+    const procesoLabel = (id) => { const p = procesos.find((x) => x.id === id); return p ? (p.nurej ? "NUREJ " + p.nurej : "Proceso") : null; };
+    return (React.createElement("div", { className: "space-y-2.5" }, sorted.map((n) => {
+        const client = clientById(n.clienteId);
+        const esBitacora = n.tipo === "bitacora";
+        return (React.createElement("div", { key: n.id, className: "rounded-xl p-4", style: { background: "var(--card)", border: "1px solid var(--hairline-soft)" } },
+            React.createElement("div", { className: "flex justify-between items-start gap-2 mb-1.5" },
+                React.createElement("div", { className: "flex items-center gap-1.5 flex-wrap" },
+                    esBitacora && React.createElement("span", { className: "text-[10px] font-semibold px-2 py-0.5 rounded-full", style: { background: "var(--gold-dim)", color: "var(--gold)" } },
+                        "Bit\u00E1cora",
+                        procesoLabel(n.procesoId) ? " · " + procesoLabel(n.procesoId) : ""),
+                    React.createElement("span", { style: { color: "#ECEDEF7A", fontFamily: "'IBM Plex Mono', monospace" }, className: "text-[11px]" },
+                        formatDateShort(n.createdAt),
+                        client ? " · " + client.nombre : "")),
+                React.createElement("button", { onClick: () => onDelete(n.id) },
+                    React.createElement(Icon, { name: "trash", size: 13, color: "#ECEDEF60" }))),
+            React.createElement("p", { style: { color: "var(--text)" }, className: "text-sm leading-relaxed" }, n.texto)));
+    })));
 }
 function AgendaTab({ eventsByDay, clientById, onToggleDone, onDelete }) {
     const days = Object.keys(eventsByDay).sort();
@@ -414,22 +593,6 @@ function VencimientosTab({ vencimientos, clientById, onToggleDone, onAddCalculat
         React.createElement("h3", { style: { fontFamily: "'Fraunces', serif", color: "var(--text)" }, className: "font-semibold mb-2 px-1" }, "Pr\u00F3ximos vencimientos"),
         vencimientos.length === 0 ? React.createElement(EmptyState, { icon: "alertTriangle", title: "Sin vencimientos pendientes", hint: "Us\u00E1 la calculadora de arriba o agregalos desde la Agenda." }) : (React.createElement("div", { className: "space-y-2.5" }, vencimientos.map((ev) => React.createElement(EventCard, { key: ev.id, event: ev, client: clientById(ev.clienteId), onToggleDone: onToggleDone, onDelete: () => { } }))))));
 }
-function NotasTab({ notes, clientById, onDelete }) {
-    const sorted = [...notes].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    if (sorted.length === 0)
-        return React.createElement(EmptyState, { icon: "stickyNote", title: "Sin notas", hint: "Toc\u00E1 + para dejar una nota r\u00E1pida, vinculada o no a un cliente." });
-    return (React.createElement("div", { className: "space-y-2.5" }, sorted.map((n) => {
-        const client = clientById(n.clienteId);
-        return (React.createElement("div", { key: n.id, className: "rounded-xl p-4", style: { background: "var(--card)", border: "1px solid var(--hairline-soft)" } },
-            React.createElement("div", { className: "flex justify-between items-start gap-2 mb-1.5" },
-                React.createElement("span", { style: { color: "#ECEDEF7A", fontFamily: "'IBM Plex Mono', monospace" }, className: "text-[11px]" },
-                    formatDateShort(n.createdAt),
-                    client ? ` · ${client.nombre}` : ""),
-                React.createElement("button", { onClick: () => onDelete(n.id) },
-                    React.createElement(Icon, { name: "trash", size: 13, color: "#ECEDEF60" }))),
-            React.createElement("p", { style: { color: "var(--text)" }, className: "text-sm leading-relaxed" }, n.texto)));
-    })));
-}
 // ---------- Modales ----------
 function AddEventModal({ clients, preset, onClose, onSave }) {
     const [titulo, setTitulo] = useState((preset === null || preset === void 0 ? void 0 : preset.presetTitle) || "");
@@ -474,18 +637,6 @@ function AddClientModal({ onClose, onSave }) {
         React.createElement(Field, { label: "Notas (opcional)" },
             React.createElement("textarea", { style: Object.assign(Object.assign({}, inputStyle), { minHeight: 70 }), value: notas, onChange: (e) => setNotas(e.target.value) })),
         React.createElement("button", { disabled: !nombre.trim(), onClick: () => onSave({ nombre: nombre.trim(), expediente: expediente.trim(), contacto: contacto.trim(), notas: notas.trim() }), className: "w-full py-3 rounded-lg font-medium mt-2 disabled:opacity-40", style: { background: "var(--gold)", color: "var(--bg)" } }, "Guardar ficha")));
-}
-function AddNoteModal({ clients, onClose, onSave }) {
-    const [texto, setTexto] = useState("");
-    const [clienteId, setClienteId] = useState("");
-    return (React.createElement(Modal, { title: "Nueva nota", onClose: onClose },
-        React.createElement(Field, { label: "Nota" },
-            React.createElement("textarea", { style: Object.assign(Object.assign({}, inputStyle), { minHeight: 90 }), value: texto, onChange: (e) => setTexto(e.target.value), placeholder: "Escrib\u00ED lo que necesit\u00E1s recordar\u2026" })),
-        React.createElement(Field, { label: "Vincular a cliente (opcional)" },
-            React.createElement("select", { style: inputStyle, value: clienteId, onChange: (e) => setClienteId(e.target.value) },
-                React.createElement("option", { value: "" }, "Sin vincular"),
-                clients.map((c) => React.createElement("option", { key: c.id, value: c.id }, c.nombre)))),
-        React.createElement("button", { disabled: !texto.trim(), onClick: () => onSave({ texto: texto.trim(), clienteId: clienteId || null }), className: "w-full py-3 rounded-lg font-medium mt-2 disabled:opacity-40", style: { background: "var(--gold)", color: "var(--bg)" } }, "Guardar nota")));
 }
 // ---------- Montaje ----------
 const root = ReactDOM.createRoot(document.getElementById("root"));
