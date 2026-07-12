@@ -1,4 +1,4 @@
-const CACHE_NAME = "gamon-agenda-cache-v18";
+const CACHE_NAME = "gamon-agenda-cache-v19";
 
 const APP_SHELL = [
   "./",
